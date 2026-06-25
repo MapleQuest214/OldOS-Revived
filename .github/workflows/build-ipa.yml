@@ -31,7 +31,7 @@ jobs:
             -resolvePackageDependencies \
             -clonedSourcePackagesDirPath SourcePackages
 
-      - name: Build archive (no signing)
+      - name: Build app (no signing)
         working-directory: OldOS
         run: |
           xcodebuild \
@@ -39,22 +39,23 @@ jobs:
             -scheme OldOS \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath $RUNNER_TEMP/OldOS.xcarchive \
             -clonedSourcePackagesDirPath SourcePackages \
-            archive \
+            CONFIGURATION_BUILD_DIR="$RUNNER_TEMP/build" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            build \
             | xcpretty
 
       - name: Package into unsigned IPA
         run: |
-          APP_PATH=$(find $RUNNER_TEMP/OldOS.xcarchive -name "*.app" | head -1)
+          APP_PATH=$(find "$RUNNER_TEMP/build" -name "*.app" -maxdepth 2 | head -1)
+          echo "Found app at: $APP_PATH"
           mkdir -p /tmp/Payload
           cp -r "$APP_PATH" /tmp/Payload/
           cd /tmp
           zip -r OldOS-Unsigned.ipa Payload
-          echo "IPA created at /tmp/OldOS-Unsigned.ipa"
+          echo "IPA created:"
           ls -lh /tmp/OldOS-Unsigned.ipa
 
       - name: Upload IPA artifact
