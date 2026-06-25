@@ -42,6 +42,8 @@ struct recordings_view: View {
     @State var recordings_current_nav_view: String = "Recordings"
     @State var show_delete: Bool = false
     @State var current_recording: RecordingItem?
+    @State var showShareSheet: Bool = false
+    @State var shareURL: URL? = nil
     var body: some View {
         GeometryReader {geometry in
             ZStack {
@@ -94,7 +96,12 @@ struct recordings_view: View {
                             }
                             VStack(spacing: 0) {
                                 Spacer()
-                                recordings_footer(player: player, lib: lib, show_delete: $show_delete).frame(width: geometry.size.width, height: 120).background(Color.white)
+                                recordings_footer(player: player, lib: lib, show_delete: $show_delete, share_action: {
+                                if let url = player.player?.url {
+                                    shareURL = url
+                                    showShareSheet = true
+                                }
+                            }).frame(width: geometry.size.width, height: 120).background(Color.white)
                             }
                         }.background(Color.white).clipped().transition(AnyTransition.asymmetric(insertion: .move(edge:forward_or_backward == false ? .trailing : .leading), removal: .move(edge:forward_or_backward == false ? .leading : .trailing)))
                     case "Recordings_Destination":
@@ -124,6 +131,10 @@ struct recordings_view: View {
                     }.transition(.asymmetric(insertion: .move(edge:.bottom), removal: .move(edge:.bottom))).zIndex(3)
                }
         }
+        }.sheet(isPresented: $showShareSheet) {
+            if let url = shareURL {
+                ActivityShareSheet(items: [url], isPresented: $showShareSheet)
+            }
         }.onAppear() {
             UIScrollView.appearance().bounces = true
         }.onDisappear() {
@@ -322,6 +333,7 @@ struct recordings_footer: View {
     @ObservedObject var player: RecordingPlayerVM
     @ObservedObject var lib: RecordingsLibrary
     @Binding var show_delete: Bool
+    var share_action: () -> Void = {}
     var body: some View {
         GeometryReader {geometry in
             ZStack {
@@ -352,8 +364,7 @@ struct recordings_footer: View {
                         Text(formattedDuration(player.duration)).font(.custom("Helvetica Neue Bold", fixedSize: 14)).foregroundColor(.white).lineLimit(1).shadow(color: Color.black.opacity(0.75), radius: 0, x: 0.0, y: -1).padding(.trailing, 15)
                     }.offset(y: 10)
                     HStack {
-                        Button(action:{
-                        }){
+                        Button(action:{ share_action() }){
                             ZStack {
                                 RoundedRectangle(cornerRadius: 12).fill(LinearGradient(gradient: Gradient(colors: [Color.init(red: 3/255, green: 3/255, blue: 3/255), Color.init(red: 21/255, green: 21/255, blue: 21/255), Color.init(red: 32/255, green: 32/255, blue: 32/255)]), startPoint: .top, endPoint: .bottom)).overlay(RoundedRectangle(cornerRadius: 12).stroke(LinearGradient(gradient: Gradient(colors:[Color.init(red: 83/255, green: 83/255, blue: 83/255),Color.init(red: 143/255, green: 143/255, blue: 143/255)]), startPoint: .top, endPoint: .bottom), lineWidth: 0.5))
                                 RoundedRectangle(cornerRadius: 9).fill(returnLinearGradient(.blue)).addBorder(LinearGradient(gradient: Gradient(colors:[Color.white.opacity(0.9), Color.white.opacity(0.25)]), startPoint: .top, endPoint: .bottom), width: 0.4, cornerRadius: 9).padding(3)

@@ -239,6 +239,9 @@ struct PlacesMapView: UIViewControllerRepresentable {
 struct photo_video_share_view: View {
     var media_type: PHAssetMediaType
     @Binding var show_share: Bool
+    var email_action: () -> Void = {}
+    var mms_action: () -> Void = {}
+    var more_action: () -> Void = {}
     var body: some View {
         GeometryReader {geometry in
             ZStack {
@@ -247,24 +250,21 @@ struct photo_video_share_view: View {
                     Rectangle().fill(LinearGradient(gradient: Gradient(colors: [Color.init(red: 21/255, green: 20/255, blue: 20/255).opacity(0.88), Color.black.opacity(0.9)]), startPoint: .top, endPoint: .bottom))
                 }
                 VStack {
-                    Button(action:{
-                    }){
+                    Button(action:{ email_action() }){
                         ZStack {
                             RoundedRectangle(cornerRadius: 12).fill(LinearGradient(gradient: Gradient(colors: [Color.init(red: 3/255, green: 3/255, blue: 3/255), Color.init(red: 21/255, green: 21/255, blue: 21/255), Color.init(red: 32/255, green: 32/255, blue: 32/255)]), startPoint: .top, endPoint: .bottom)).overlay(RoundedRectangle(cornerRadius: 12).stroke(LinearGradient(gradient: Gradient(colors:[Color.init(red: 83/255, green: 83/255, blue: 83/255),Color.init(red: 143/255, green: 143/255, blue: 143/255)]), startPoint: .top, endPoint: .bottom), lineWidth: 0.5))
                             RoundedRectangle(cornerRadius: 9).fill(LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 235/255, green: 235/255, blue: 236/255), location: 0), .init(color: Color(red: 208/255, green: 209/255, blue: 211/255), location: 0.52), .init(color: Color(red: 192/255, green: 193/255, blue: 196/255), location: 0.52), .init(color: Color(red: 192/255, green: 193/255, blue: 196/255), location: 1.0)]), startPoint: .top, endPoint: .bottom)).addBorder(LinearGradient(gradient: Gradient(colors:[Color.white.opacity(0.9), Color.white.opacity(0.25)]), startPoint: .top, endPoint: .bottom), width: 0.4, cornerRadius: 9).padding(3)
                             Text("Email \(media_type.rawValue == 1 ? "Photo" : media_type.rawValue == 2 ? "Video" : "Other")").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(Color.black).shadow(color: Color.white.opacity(0.9), radius: 0, x: 0.0, y: 0.9)
                         }.padding([.leading, .trailing], 25).frame(minHeight: 50, maxHeight:50)
                     }.padding([.bottom], 2.5).padding(.top, 28)
-                    Button(action:{
-                    }){
+                    Button(action:{ mms_action() }){
                         ZStack {
                             RoundedRectangle(cornerRadius: 12).fill(LinearGradient(gradient: Gradient(colors: [Color.init(red: 3/255, green: 3/255, blue: 3/255), Color.init(red: 21/255, green: 21/255, blue: 21/255), Color.init(red: 32/255, green: 32/255, blue: 32/255)]), startPoint: .top, endPoint: .bottom)).overlay(RoundedRectangle(cornerRadius: 12).stroke(LinearGradient(gradient: Gradient(colors:[Color.init(red: 83/255, green: 83/255, blue: 83/255),Color.init(red: 143/255, green: 143/255, blue: 143/255)]), startPoint: .top, endPoint: .bottom), lineWidth: 0.5))
                             RoundedRectangle(cornerRadius: 9).fill(LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 235/255, green: 235/255, blue: 236/255), location: 0), .init(color: Color(red: 208/255, green: 209/255, blue: 211/255), location: 0.52), .init(color: Color(red: 192/255, green: 193/255, blue: 196/255), location: 0.52), .init(color: Color(red: 192/255, green: 193/255, blue: 196/255), location: 1.0)]), startPoint: .top, endPoint: .bottom)).addBorder(LinearGradient(gradient: Gradient(colors:[Color.white.opacity(0.9), Color.white.opacity(0.25)]), startPoint: .top, endPoint: .bottom), width: 0.4, cornerRadius: 9).padding(3)
                             Text("MMS").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(Color.black).shadow(color: Color.white.opacity(0.9), radius: 0, x: 0.0, y: 0.9)
                         }.padding([.leading, .trailing], 25).frame(minHeight: 50, maxHeight:50)
                     }.padding([.top, .bottom], 2.5)
-                    Button(action:{
-                    }){
+                    Button(action:{ more_action() }){
                         ZStack {
                             RoundedRectangle(cornerRadius: 12).fill(LinearGradient(gradient: Gradient(colors: [Color.init(red: 3/255, green: 3/255, blue: 3/255), Color.init(red: 21/255, green: 21/255, blue: 21/255), Color.init(red: 32/255, green: 32/255, blue: 32/255)]), startPoint: .top, endPoint: .bottom)).overlay(RoundedRectangle(cornerRadius: 12).stroke(LinearGradient(gradient: Gradient(colors:[Color.init(red: 83/255, green: 83/255, blue: 83/255),Color.init(red: 143/255, green: 143/255, blue: 143/255)]), startPoint: .top, endPoint: .bottom), lineWidth: 0.5))
                             RoundedRectangle(cornerRadius: 9).fill(LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 235/255, green: 235/255, blue: 236/255), location: 0), .init(color: Color(red: 208/255, green: 209/255, blue: 211/255), location: 0.52), .init(color: Color(red: 192/255, green: 193/255, blue: 196/255), location: 0.52), .init(color: Color(red: 192/255, green: 193/255, blue: 196/255), location: 1.0)]), startPoint: .top, endPoint: .bottom)).addBorder(LinearGradient(gradient: Gradient(colors:[Color.white.opacity(0.9), Color.white.opacity(0.25)]), startPoint: .top, endPoint: .bottom), width: 0.4, cornerRadius: 9).padding(3)
@@ -305,6 +305,8 @@ struct photo_destination: View {
     @State var pervent_delta: Bool = false
     @State var unhide_video: Bool = false
     @State var show_share: Bool = false
+    @State var showShareSheet: Bool = false
+    @State var shareItems: [Any] = []
     @GestureState var scale: CGFloat = 1.0
     @GestureState var dragAmount = CGSize.zero
     let pub = NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)
@@ -395,16 +397,36 @@ struct photo_destination: View {
                     if show_share {
                         VStack(spacing:0) {
                             Spacer().foregroundColor(.clear).zIndex(0)
-                            photo_video_share_view(media_type: selected_photo.mediaType, show_share: $show_share).frame(minHeight: geometry.size.height/2, maxHeight: geometry.size.height/2).zIndex(1)
+                            photo_video_share_view(media_type: selected_photo.mediaType, show_share: $show_share, email_action: {
+                                withAnimation(.linear(duration: 0.4)) { show_share = false }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                                    shareItems = [selected_photo_image]
+                                    showShareSheet = true
+                                }
+                            }, mms_action: {
+                                withAnimation(.linear(duration: 0.4)) { show_share = false }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                                    shareItems = [selected_photo_image]
+                                    showShareSheet = true
+                                }
+                            }, more_action: {
+                                withAnimation(.linear(duration: 0.4)) { show_share = false }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                                    shareItems = [selected_photo_image]
+                                    showShareSheet = true
+                                }
+                            }).frame(minHeight: geometry.size.height/2, maxHeight: geometry.size.height/2).zIndex(1)
                         }.transition(.asymmetric(insertion: .move(edge:.bottom), removal: .move(edge:.bottom))).zIndex(1)
                     }
                 }
             }
+        }.sheet(isPresented: $showShareSheet) {
+            ActivityShareSheet(items: shareItems, isPresented: $showShareSheet)
         }.onAppear() {
             if selected_photo.mediaType == .video {
                 let options = PHVideoRequestOptions()
                 options.isNetworkAccessAllowed = true
-                
+
                 PHCachingImageManager().requestPlayerItem(forVideo: selected_photo, options: options) { (playerItem, info) in
                     DispatchQueue.main.async {
                         if let playerItem = playerItem {

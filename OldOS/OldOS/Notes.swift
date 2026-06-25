@@ -127,6 +127,7 @@ struct notes_destination_view: View {
     @State var content: String = ""
     @State var last_edited_date: Date?
     @State var show_delete: Bool = false
+    @State private var showMailCompose: Bool = false
     @Binding var appear_or_disapear_animation: Bool
     @Binding var is_editing_note: Bool
     @Binding var selected_note: Note
@@ -162,7 +163,11 @@ struct notes_destination_view: View {
                         Image("arrow left").opacity(selected_note != notes.sorted(by: {($0.last_edited_date ?? Date()) > ($1.last_edited_date ?? Date())}).first ? 1 : 0.5)
                     }
                     Spacer()
-                    Button(action:{}) {
+                    Button(action:{
+                        if MFMailComposeViewController.canSendMail() {
+                            showMailCompose = true
+                        }
+                    }) {
                         Image("email")
                     }
                     Spacer()
@@ -210,7 +215,9 @@ struct notes_destination_view: View {
                }//We nest this in a VStack to get around type check errors
                 }.zIndex(3)
         }
-        }.background(Image("bodyMarginThin-568h").resizable().scaledToFill()).onDisappear() {
+        }.background(Image("bodyMarginThin-568h").resizable().scaledToFill()).sheet(isPresented: $showMailCompose) {
+            MailComposeView(subject: selected_note.title ?? "Note", body: content, isPresented: $showMailCompose)
+        }.onDisappear() {
             appear_or_disapear_animation = true
         }.onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) {

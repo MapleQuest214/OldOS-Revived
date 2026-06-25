@@ -12,6 +12,7 @@ import Foundation
 import SystemConfiguration.CaptiveNetwork
 import LocationProvider
 import MediaPlayer
+import MessageUI
 
 //So what is this entire file just called common? Basically, my mindset was to build the app in the same way Apple built interface builder — you have a collection of UI elements at your disposal that are bases. You can then make a copy in whatever other file you'd like if you require custom abilities. If you just need the generic version, you can use the generic.
 
@@ -2822,4 +2823,37 @@ func randomString(length: Int) -> String {
 func randomNumberString(length: Int) -> String {
   let letters = "0123456789"
   return String((0..<length).map{ _ in letters.randomElement()! })
+}
+
+struct ActivityShareSheet: UIViewControllerRepresentable {
+    var items: [Any]
+    @Binding var isPresented: Bool
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        vc.completionWithItemsHandler = { _, _, _, _ in isPresented = false }
+        return vc
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct MailComposeView: UIViewControllerRepresentable {
+    var subject: String
+    var body: String
+    @Binding var isPresented: Bool
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let vc = MFMailComposeViewController()
+        vc.setSubject(subject)
+        vc.setMessageBody(body, isHTML: false)
+        vc.mailComposeDelegate = context.coordinator
+        return vc
+    }
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        var parent: MailComposeView
+        init(_ parent: MailComposeView) { self.parent = parent }
+        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+            parent.isPresented = false
+        }
+    }
 }
