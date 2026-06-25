@@ -506,28 +506,10 @@ struct rating_view: View {
 
 func play_song(song: MPMediaItem) {
     let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-    SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-        
-        guard err == nil else {
-            print("error in capability check is \(err!)")
-            return
-        }
-        
-        if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-            print("user has Apple Music subscription")
-            musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
-            musicPlayer.prepareToPlay { (error) in
-                if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                } else {
-                    musicPlayer.play()
-                }
-            }
-        }
-        
-        if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-            print("user does not have subscription")
-        }
-        
+    musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
+    musicPlayer.prepareToPlay { error in
+        guard error == nil else { return }
+        musicPlayer.play()
     }
 }
 
@@ -760,30 +742,11 @@ struct SkeuomorphicList_Playlists: View {
                             ForEach(MusicObserver.songs.filter { ($0.title ?? "").localizedCaseInsensitiveContains(search) }, id: \.persistentID) { song in
                                 Button(action:{
                                     let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                                    SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                                        
-                                        guard err == nil else {
-                                            print("error in capability check is \(err!)")
-                                            return
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                            print("user has Apple Music subscription")
-                                            musicPlayer.nowPlayingItem = nil
-                                            musicPlayer.setQueue(with: MPMediaItemCollection(items:[song]))
-                                            musicPlayer.prepareToPlay { (error) in
-                                                if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                                } else {
-                                                    musicPlayer.play()
-                                                    forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                                }
-                                            }
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                            print("user does not have subscription")
-                                        }
-                                        
+                                    musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
+                                    musicPlayer.prepareToPlay { error in
+                                        guard error == nil else { return }
+                                        musicPlayer.play()
+                                        forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                                     }
                                 }) {
                                     VStack(alignment: .leading, spacing: 0) {
@@ -880,36 +843,17 @@ struct SkeuomorphicList_Playlists_Destination: View {
                 }.listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)).frame(height:44).hideRowSeparator()
                 Button(action:{
                     let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                    SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                        
-                        guard err == nil else {
-                            print("error in capability check is \(err!)")
-                            return
-                        }
-                        
-                        if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                            print("user has Apple Music subscription")
-                            musicPlayer.nowPlayingItem = nil
-                            musicPlayer.setQueue(with: MPMediaItemCollection(items: playlist.items.shuffled()))
-                            musicPlayer.prepareToPlay { (error) in
-                                if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                } else {
-                                    musicPlayer.play()
-                                    forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                }
-                            }
-                        }
-                        
-                        if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                            print("user does not have subscription")
-                        }
-                        
+                    musicPlayer.setQueue(with: MPMediaItemCollection(items: playlist.items.shuffled()))
+                    musicPlayer.prepareToPlay { error in
+                        guard error == nil else { return }
+                        musicPlayer.play()
+                        forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                     }
                 }) {
                     VStack(alignment: .leading, spacing: 0) {
                         Spacer().frame(height:4.5)
                         HStack() {
-                            
+
                             ZStack(alignment: .leading) {
                                 HStack {
                                     Text("Shuffle").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(.black).lineLimit(1)
@@ -924,30 +868,11 @@ struct SkeuomorphicList_Playlists_Destination: View {
                 ForEach(playlist.items ?? [], id: \.persistentID) { song in
                     Button(action:{
                         let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                        SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                            
-                            guard err == nil else {
-                                print("error in capability check is \(err!)")
-                                return
-                            }
-                            
-                            if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                print("user has Apple Music subscription")
-                                musicPlayer.nowPlayingItem = nil
-                                musicPlayer.setQueue(with: MPMediaItemCollection(items: playlist.items.wrap(around: song)))
-                                musicPlayer.prepareToPlay { (error) in
-                                    if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                    } else {
-                                        musicPlayer.play()
-                                        forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                    }
-                                }
-                            }
-                            
-                            if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                print("user does not have subscription")
-                            }
-                            
+                        musicPlayer.setQueue(with: MPMediaItemCollection(items: playlist.items.wrap(around: song)))
+                        musicPlayer.prepareToPlay { error in
+                            guard error == nil else { return }
+                            musicPlayer.play()
+                            forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                         }
                     }) {
                         VStack(alignment: .leading, spacing: 0) {
@@ -1003,30 +928,11 @@ struct SkeuomorphicList_Playlists_Destination: View {
                             ForEach(MusicObserver.songs.filter { ($0.title ?? "").localizedCaseInsensitiveContains(search) }, id: \.persistentID) { song in
                                 Button(action:{
                                     let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                                    SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                                        
-                                        guard err == nil else {
-                                            print("error in capability check is \(err!)")
-                                            return
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                            print("user has Apple Music subscription")
-                                            musicPlayer.nowPlayingItem = nil
-                                            musicPlayer.setQueue(with: MPMediaItemCollection(items:[song]))
-                                            musicPlayer.prepareToPlay { (error) in
-                                                if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                                } else {
-                                                    musicPlayer.play()
-                                                    forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                                }
-                                            }
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                            print("user does not have subscription")
-                                        }
-                                        
+                                    musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
+                                    musicPlayer.prepareToPlay { error in
+                                        guard error == nil else { return }
+                                        musicPlayer.play()
+                                        forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                                     }
                                 }) {
                                     VStack(alignment: .leading, spacing: 0) {
@@ -1277,30 +1183,11 @@ struct SkeuomorphicList_Artists: View {
                             ForEach(MusicObserver.songs.filter { ($0.title ?? "").localizedCaseInsensitiveContains(search) }, id: \.persistentID) { song in
                                 Button(action:{
                                     let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                                    SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                                        
-                                        guard err == nil else {
-                                            print("error in capability check is \(err!)")
-                                            return
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                            print("user has Apple Music subscription")
-                                            musicPlayer.nowPlayingItem = nil
-                                            musicPlayer.setQueue(with: MPMediaItemCollection(items:[song]))
-                                            musicPlayer.prepareToPlay { (error) in
-                                                if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                                } else {
-                                                    musicPlayer.play()
-                                                    forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                                }
-                                            }
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                            print("user does not have subscription")
-                                        }
-                                        
+                                    musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
+                                    musicPlayer.prepareToPlay { error in
+                                        guard error == nil else { return }
+                                        musicPlayer.play()
+                                        forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                                     }
                                 }) {
                                     VStack(alignment: .leading, spacing: 0) {
@@ -1415,30 +1302,11 @@ struct SkeuomorphicList_Artists_Destination: View {
                             ForEach(MusicObserver.songs.filter { ($0.title ?? "").localizedCaseInsensitiveContains(search) }, id: \.persistentID) { song in
                                 Button(action:{
                                     let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                                    SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                                        
-                                        guard err == nil else {
-                                            print("error in capability check is \(err!)")
-                                            return
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                            print("user has Apple Music subscription")
-                                            musicPlayer.nowPlayingItem = nil
-                                            musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
-                                            musicPlayer.prepareToPlay { (error) in
-                                                if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                                } else {
-                                                    musicPlayer.play()
-                                                    forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                                }
-                                            }
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                            print("user does not have subscription")
-                                        }
-                                        
+                                    musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
+                                    musicPlayer.prepareToPlay { error in
+                                        guard error == nil else { return }
+                                        musicPlayer.play()
+                                        forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                                     }
                                 }) {
                                     VStack(alignment: .leading, spacing: 0) {
@@ -1497,30 +1365,11 @@ struct albums_destination: View {
                     ForEach(removeDuplicates(album.items ?? []), id: \.persistentID) { track in
                         Button(action:{
                             let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                            SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                                
-                                guard err == nil else {
-                                    print("error in capability check is \(err!)")
-                                    return
-                                }
-                                
-                                if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                    print("user has Apple Music subscription")
-                                    musicPlayer.nowPlayingItem = nil
-                                    musicPlayer.setQueue(with: MPMediaItemCollection(items: [track]))
-                                    musicPlayer.prepareToPlay { (error) in
-                                        if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                        } else {
-                                            musicPlayer.play()
-                                            forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                        }
-                                    }
-                                }
-                                
-                                if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                    print("user does not have subscription")
-                                }
-                                
+                            musicPlayer.setQueue(with: MPMediaItemCollection(items: [track]))
+                            musicPlayer.prepareToPlay { error in
+                                guard error == nil else { return }
+                                musicPlayer.play()
+                                forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                             }
                         }) {
                             VStack {
@@ -1638,34 +1487,15 @@ struct SkeuomorphicList_Songs: View {
                     Section(header: alpha_list_header(letter: letter).id(letter) .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))) {
                         ForEach(MusicObserver.songs.filter({(song) -> Bool in
                             String(alphabet.contains(String(song.title?.prefix(1) ?? "")) ? (song.title?.prefix(1) ?? "") : "#") == letter
-                            
+
                         }), id: \.persistentID) { song in
                             Button(action:{
                                 let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                                SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                                    
-                                    guard err == nil else {
-                                        print("error in capability check is \(err!)")
-                                        return
-                                    }
-                                    
-                                    if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                        print("user has Apple Music subscription")
-                                        musicPlayer.nowPlayingItem = nil
-                                        musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
-                                        musicPlayer.prepareToPlay { (error) in
-                                            if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                            } else {
-                                                musicPlayer.play()
-                                                forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                            }
-                                        }
-                                    }
-                                    
-                                    if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                        print("user does not have subscription")
-                                    }
-                                    
+                                musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
+                                musicPlayer.prepareToPlay { error in
+                                    guard error == nil else { return }
+                                    musicPlayer.play()
+                                    forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                                 }
                             }) {
                                 VStack(alignment: .leading, spacing: 0) {
@@ -1729,30 +1559,11 @@ struct SkeuomorphicList_Songs: View {
                             ForEach(MusicObserver.songs.filter { ($0.title ?? "").localizedCaseInsensitiveContains(search) }, id: \.persistentID) { song in
                                 Button(action:{
                                     let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-                                    SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                                        
-                                        guard err == nil else {
-                                            print("error in capability check is \(err!)")
-                                            return
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                                            print("user has Apple Music subscription")
-                                            musicPlayer.nowPlayingItem = nil
-                                            musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
-                                            musicPlayer.prepareToPlay { (error) in
-                                                if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                                                } else {
-                                                    musicPlayer.play()
-                                                    forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                                                }
-                                            }
-                                        }
-                                        
-                                        if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                                            print("user does not have subscription")
-                                        }
-                                        
+                                    musicPlayer.setQueue(with: MPMediaItemCollection(items: [song]))
+                                    musicPlayer.prepareToPlay { error in
+                                        guard error == nil else { return }
+                                        musicPlayer.play()
+                                        forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
                                     }
                                 }) {
                                     VStack(alignment: .leading, spacing: 0) {
@@ -1788,30 +1599,11 @@ struct shuffle: View {
     var body: some View {
         Button(action:{
             let musicPlayer = MPMusicPlayerController.systemMusicPlayer
-            SKCloudServiceController().requestCapabilities { (capability:SKCloudServiceCapability, err:Error?) in
-                
-                guard err == nil else {
-                    print("error in capability check is \(err!)")
-                    return
-                }
-                
-                if capability.contains(SKCloudServiceCapability.musicCatalogPlayback) {
-                    print("user has Apple Music subscription")
-                    musicPlayer.nowPlayingItem = nil
-                    musicPlayer.setQueue(with: MPMediaItemCollection(items: songs.shuffled()))
-                    musicPlayer.prepareToPlay { (error) in
-                        if error != nil && error!.localizedDescription == "The operation couldn’t be completed. (MPCPlayerRequestErrorDomain error 1.)" {
-                        } else {
-                            musicPlayer.play()
-                            forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
-                        }
-                    }
-                }
-                
-                if capability.contains(SKCloudServiceCapability.musicCatalogSubscriptionEligible) {
-                    print("user does not have subscription")
-                }
-                
+            musicPlayer.setQueue(with: MPMediaItemCollection(items: songs.shuffled()))
+            musicPlayer.prepareToPlay { error in
+                guard error == nil else { return }
+                musicPlayer.play()
+                forward_or_backward = false; withAnimation(.linear(duration: 0.28)){current_nav_view = "Now Playing"}
             }
         }) {
             VStack(alignment: .leading, spacing: 0) {

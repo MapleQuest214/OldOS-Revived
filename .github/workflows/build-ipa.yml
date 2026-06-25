@@ -1,0 +1,65 @@
+name: Build Unsigned IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve Swift Package dependencies
+        working-directory: OldOS
+        run: |
+          xcodebuild \
+            -project OldOS.xcodeproj \
+            -scheme OldOS \
+            -resolvePackageDependencies \
+            -clonedSourcePackagesDirPath SourcePackages
+
+      - name: Build archive (no signing)
+        working-directory: OldOS
+        run: |
+          xcodebuild \
+            -project OldOS.xcodeproj \
+            -scheme OldOS \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $RUNNER_TEMP/OldOS.xcarchive \
+            -clonedSourcePackagesDirPath SourcePackages \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+
+      - name: Package into unsigned IPA
+        run: |
+          APP_PATH=$(find $RUNNER_TEMP/OldOS.xcarchive -name "*.app" | head -1)
+          mkdir -p /tmp/Payload
+          cp -r "$APP_PATH" /tmp/Payload/
+          cd /tmp
+          zip -r OldOS-Unsigned.ipa Payload
+          echo "IPA created at /tmp/OldOS-Unsigned.ipa"
+          ls -lh /tmp/OldOS-Unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OldOS-Unsigned
+          path: /tmp/OldOS-Unsigned.ipa
+          retention-days: 30

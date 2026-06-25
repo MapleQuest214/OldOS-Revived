@@ -10,6 +10,75 @@ import Alamofire
 import SDWebImageSwiftUI
 import Combine
 
+// MARK: - Piped API
+
+private let pipedBase = "https://pipedapi.kavin.rocks"
+
+struct PipedTrendingItem: Codable {
+    let url: String?; let title: String?; let thumbnail: String?
+    let uploaderName: String?; let uploaderUrl: String?
+    let duration: Int?; let views: Int?; let shortDescription: String?
+    var videoId: String? { url?.replacingOccurrences(of: "/watch?v=", with: "") }
+}
+
+struct PipedSearchResponse: Codable {
+    let items: [PipedSearchItem]?
+}
+
+struct PipedSearchItem: Codable {
+    let url: String?; let title: String?; let thumbnail: String?
+    let uploaderName: String?; let duration: Int?; let views: Int?
+    let type: String?
+    var videoId: String? { url?.replacingOccurrences(of: "/watch?v=", with: "") }
+}
+
+struct PipedVideoInfo: Codable {
+    let title: String?; let description: String?
+    let uploader: String?; let uploaderUrl: String?; let thumbnailUrl: String?
+    let duration: Int?; let views: Int?; let likes: Int?; let dislikes: Int?
+    let videoStreams: [PipedVideoStream]?
+    let audioStreams: [PipedAudioStream]?
+}
+
+struct PipedVideoStream: Codable {
+    let url: String?; let width: Int?; let height: Int?
+    let mimeType: String?; let videoOnly: Bool?; let bitrate: Int?
+}
+
+struct PipedAudioStream: Codable {
+    let url: String?; let mimeType: String?; let bitrate: Int?
+}
+
+private func pipedViewStr(_ n: Int) -> String {
+    if n >= 1_000_000 { return "\(n / 1_000_000)M" }
+    if n >= 1_000 { return "\(n / 1_000)K" }
+    return "\(n)"
+}
+
+private func pipedToYTData(id: String, title: String, uploaderName: String, uploaderUrl: String,
+                            thumbnail: String, durationSec: Int, views: Int,
+                            likes: Int = 0, dislikes: Int = 0,
+                            description: String = "", streamUrl: String = "") -> YouTubeVideoData? {
+    var json: [String: Any] = [
+        "id": id, "title": title, "description": description,
+        "channel": ["name": uploaderName,
+                    "id": uploaderUrl.replacingOccurrences(of: "/channel/", with: ""),
+                    "url": "https://youtube.com\(uploaderUrl)"],
+        "thumbnails": [["url": thumbnail]],
+        "duration": ["lengthSec": "\(durationSec)"],
+        "views": ["text": "\(views)", "pretty": pipedViewStr(views)],
+        "ratings": ["likes": ["text": "\(likes)", "pretty": pipedViewStr(likes)],
+                    "dislikes": ["text": "\(max(0,dislikes))", "pretty": pipedViewStr(max(0,dislikes))]]
+    ]
+    if !streamUrl.isEmpty {
+        json["streams"] = ["formats": [["url": streamUrl, "mimeType": "video/mp4",
+                                        "quality": "hd720", "bitrate": 0,
+                                        "width": 1280, "height": 720]]]
+    }
+    guard let data = try? JSONSerialization.data(withJSONObject: json) else { return nil }
+    return try? JSONDecoder().decode(YouTubeVideoData.self, from: data)
+}
+
 //I'll re-enable youtube at somepoint when I get the google cloud billing figured out...
 
 struct Youtube: View {
@@ -374,7 +443,7 @@ struct YoutubeFeaturedView: View {
                     ScrollView(showsIndicators: true) {
                         
                         VStack {
-                            if youtube_observer.featured.isEmpty || youtube_observer.featured_stats.isEmpty || youtube_observer.featured_details.isEmpty {
+                            if youtube_observer.featured.isEmpty {
                                 HStack {
                                     Spacer()
                                     ProgressView().progressViewStyle(CircularProgressViewStyle())
@@ -417,13 +486,12 @@ private struct YoutubeFeaturedVideoList: View {
     var body: some View {
         VStack(spacing:0){
             ForEach(youtube_observer.featured, id:\.id) { video in
-                let like_count = Int(youtube_observer.featured_stats[optional: youtube_observer.featured_stats.firstIndex(where: {$0.id == video.id}) ?? 0]?.statistics.likeCount ?? "") ?? 1
-                let dislike_count = Int(youtube_observer.featured_stats[optional: youtube_observer.featured_stats.firstIndex(where: {$0.id == video.id}) ?? 0]?.statistics.dislikeCount ?? "") ?? 1
-                let view_count = youtube_observer.featured_stats[optional: youtube_observer.featured_stats.firstIndex(where: {$0.id == video.id}) ?? 0]?.statistics.viewCount ?? ""
-                let duration = youtube_observer.featured_details[optional: youtube_observer.featured_details.firstIndex(where: {$0.id == video.id}) ?? 0]?.contentDetails.duration ?? ""
+                let like_count = Int((video.ratings?.likes?.text ?? "").filter("0123456789.".contains)) ?? 1
+                let dislike_count = Int((video.ratings?.dislikes?.text ?? "").filter("0123456789.".contains)) ?? 1
+                let view_count = (video.views?.text ?? "").filter("0123456789.".contains)
+                let duration = Double(video.duration?.lengthSec ?? "0") ?? 0
                 Button(action:{
                     fetch_searched_video(id: video.id, completion: {result in
-                        let url = result.streams?.formats?.first?.url
                         selected_video_player = AVPlayer(url: result.streams?.formats?.first?.url ?? URL(string: "google.com")!)
                         instant_video_change = true; withAnimation(.linear(duration: 0.4)) {show_video_player = true}
                     })
@@ -432,11 +500,11 @@ private struct YoutubeFeaturedVideoList: View {
                 }) {
                     VStack(spacing: 0) {
                         HStack {
-                            WebImage(url: video.snippet.thumbnails.medium.url).resizable().placeholder {
+                            WebImage(url: video.thumbnails?[optional: 0]?.url).resizable().placeholder {
                                 Image("DefaultThumbnail")
                             }.aspectRatio(contentMode: .fit).frame(width:geometry.size.width/3, height: 89).background(Color.black).border_top(width: 1, edges:[.trailing], color: Color(red: 217/255, green: 217/255, blue: 217/255))
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(video.snippet.title ?? "---").font(.custom("Helvetica Neue Bold", fixedSize: 13)).foregroundColor(.black).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                                Text(video.title ?? "---").font(.custom("Helvetica Neue Bold", fixedSize: 13)).foregroundColor(.black).lineLimit(2).fixedSize(horizontal: false, vertical: true)
                                 HStack(alignment: .top, spacing: 2.5) {
                                     Image("thumbsUp").offset(y: -4.5)
                                     Text("\(Int(like_count/(like_count + dislike_count)*100))%").font(.custom("Helvetica Neue Bold", fixedSize: 13)).foregroundColor(Color(red: 73/255, green: 128/255, blue: 35/255))
@@ -449,11 +517,11 @@ private struct YoutubeFeaturedVideoList: View {
 
 
 
-                                    Text(duration.getYoutubeFormattedDuration()).font(.custom("Helvetica Neue Bold", fixedSize: 13)).foregroundColor(.black).lineLimit(1).onAppear() {
+                                    Text(duration.asString(style: .positional)).font(.custom("Helvetica Neue Bold", fixedSize: 13)).foregroundColor(.black).lineLimit(1).onAppear() {
 
                                     }
 
-                                    Text(video.snippet.channelTitle ?? "---").font(.custom("Helvetica Neue Bold", fixedSize: 13)).foregroundColor(Color(red: 103/255, green: 109/255, blue: 115/255)).lineLimit(1)
+                                    Text(video.channel?.name ?? "---").font(.custom("Helvetica Neue Bold", fixedSize: 13)).foregroundColor(Color(red: 103/255, green: 109/255, blue: 115/255)).lineLimit(1)
                                 }
                             }
                             Spacer()
@@ -1266,35 +1334,29 @@ struct youtube_title_bar : View {
                                                     search_results.removeAll()
                                                     is_searching = true
                                                     guard let search_string = search.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else {return}
-                                                    guard let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/search-yext?query=\(search_string)") else {return}
-                                                    let request = URLRequest(url: url)
-                                                    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-                                                        
-                                                        if let error = error {
-                                                            print(error)
+                                                    guard let url = URL(string: "\(pipedBase)/search?q=\(search_string)&filter=videos") else { return }
+                                                    let task = URLSession.shared.dataTask(with: url) { data, _, error in
+                                                        guard let data = data, error == nil,
+                                                              let response = try? JSONDecoder().decode(PipedSearchResponse.self, from: data) else {
+                                                            DispatchQueue.main.async { is_searching = false }
                                                             return
                                                         }
-                                                        
-                                                        // Parse JSON data
-                                                        if let data = data {
-                                                            guard let compiled_object = parseJsonSearchData(data: data) else {
-                                                                return
+                                                        let results = (response.items ?? [])
+                                                            .filter { ($0.type == "stream" || $0.type == nil) && $0.videoId != nil }
+                                                            .prefix(20)
+                                                            .compactMap { item -> YouTubeVideoData? in
+                                                                guard let vid = item.videoId else { return nil }
+                                                                return pipedToYTData(id: vid, title: item.title ?? "",
+                                                                                     uploaderName: item.uploaderName ?? "",
+                                                                                     uploaderUrl: "",
+                                                                                     thumbnail: item.thumbnail ?? "",
+                                                                                     durationSec: item.duration ?? 0, views: item.views ?? 0)
                                                             }
-                                                            if compiled_object.isEmpty == false {
-                                                                var temp_array = [YouTubeVideoData]()
-                                                                for video in compiled_object {
-                                                                    fetch_searched_video(id: video.id ?? "", completion: {result in
-                                                                        temp_array.append(result)
-                                                                        if temp_array.count == compiled_object.count {
-                                                                            search_results = temp_array
-                                                                            is_searching = false
-                                                                        }
-                                                                    })
-                                                                }
-                                                            }
+                                                        DispatchQueue.main.async {
+                                                            search_results = Array(results)
+                                                            is_searching = false
                                                         }
-                                                    })
-                                                    
+                                                    }
                                                     task.resume()
                                                 }
                                                 
@@ -1468,25 +1530,17 @@ func format_video_duration(duration: String) -> String {
 }
 
 class YoutubeObserver: ObservableObject {
-    @Published var featured = [YoutubeFeatured.Item]()
+    @Published var featured = [YouTubeVideoData]()
     @Published var featured_stats = [YoutubeVideoStats.Item]()
     @Published var featured_details = [YoutubeVideoDetails.Item]()
-    init() {
-        parse_data()
-    }
+    init() { parse_data() }
     func parse_data() {
-        print("parsing data")
-        fetch_featured_data(completion: {data in
-            self.featured = data
-        })
-        fetch_featured_stats(completion: {data in
-            self.featured_stats = data
-        })
-        fetch_featured_details(completion: {data in
-            self.featured_details = data
-        })
+        fetch_piped_trending_videos { videos in
+            self.featured_stats = []
+            self.featured_details = []
+            self.featured = videos
+        }
     }
-    
 }
 
 
@@ -1494,223 +1548,74 @@ class MostViewedObserver: ObservableObject {
     @Published var today = [YouTubeVideoData]()
     @Published var this_week = [YouTubeVideoData]()
     @Published var all_time = [YouTubeVideoData]()
-    init() {
-        parse_data()
-    }
+    init() { parse_data() }
     func parse_data() {
-        print("parsing data")
-        fetch_most_viewed(type: "Today", completion: {results in
-            for result in results {
-                fetch_most_viewed_video(id: result.id.videoID, completion: {video in
-                    self.today.append(video)
-                })
-            }
-        })
-        fetch_most_viewed(type: "ThisWeek", completion: {results in
-            for result in results {
-                fetch_most_viewed_video(id: result.id.videoID, completion: {video in
-                    self.this_week.append(video)
-                })
-            }
-        })
-        fetch_most_viewed(type: "", completion: {results in
-            for result in results {
-                fetch_most_viewed_video(id: result.id.videoID, completion: {video in
-                    self.all_time.append(video)
-                })
-            }
-        })
+        fetch_piped_trending_videos { videos in
+            self.today = videos
+            self.this_week = videos
+            self.all_time = videos
+        }
     }
 }
 
 
 func fetch_featured_data(completion: @escaping ([YoutubeFeatured.Item]) -> Void) {
-    let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/mostPopular")!
-    var request = URLRequest(url: url)
-    request.setValue("sent-from-app", forHTTPHeaderField: "x-oldos-app")
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-        
-        if let error = error {
-            print(error)
-            return
-        }
-        
-        // Parse JSON data
-        if let data = data {
-            guard let compiled_object = parseJsonYoutubeFeaturedData(data: data) else {
-                return
-            }
-            if compiled_object.isEmpty == false {
-                completion(compiled_object)
-            }
-        }
-    })
-    
-    task.resume()
+    // no-op: YoutubeObserver now uses fetch_piped_trending_videos directly
 }
+func fetch_featured_stats(completion: @escaping ([YoutubeVideoStats.Item]) -> Void) {}
+func fetch_featured_details(completion: @escaping ([YoutubeVideoDetails.Item]) -> Void) {}
 
-func fetch_featured_stats(completion: @escaping ([YoutubeVideoStats.Item]) -> Void) {
-    //Our first step is to fetch the ID of the application, a trick we can do is to grab it from the URL...
-    let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/mostPopular/stats")!
-    var request = URLRequest(url: url)
-    request.setValue("sent-from-app", forHTTPHeaderField: "x-oldos-app")
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-        
-        if let error = error {
-            print(error)
-            return
+func fetch_piped_trending_videos(completion: @escaping ([YouTubeVideoData]) -> Void) {
+    guard let url = URL(string: "\(pipedBase)/trending?region=US") else { return }
+    URLSession.shared.dataTask(with: url) { data, _, error in
+        guard let data = data, error == nil,
+              let items = try? JSONDecoder().decode([PipedTrendingItem].self, from: data) else { return }
+        let videos = items.prefix(25).compactMap { item -> YouTubeVideoData? in
+            guard let vid = item.videoId, !vid.isEmpty else { return nil }
+            return pipedToYTData(id: vid, title: item.title ?? "",
+                                 uploaderName: item.uploaderName ?? "",
+                                 uploaderUrl: item.uploaderUrl ?? "",
+                                 thumbnail: item.thumbnail ?? "",
+                                 durationSec: item.duration ?? 0, views: item.views ?? 0,
+                                 description: item.shortDescription ?? "")
         }
-        
-        // Parse JSON data
-        if let data = data {
-            guard let compiled_object = parseJsonYoutubeFeaturedDataS(data: data) else {
-                return
-            }
-            if compiled_object.isEmpty == false {
-                completion(compiled_object)
-            }
-        }
-    })
-    
-    task.resume()
-}
-
-func fetch_featured_details(completion: @escaping ([YoutubeVideoDetails.Item]) -> Void) {
-    //Our first step is to fetch the ID of the application, a trick we can do is to grab it from the URL...
-    let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/mostPopular/details")!
-    var request = URLRequest(url: url)
-    request.setValue("sent-from-app", forHTTPHeaderField: "x-oldos-app")
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-        
-        if let error = error {
-            print(error)
-            return
-        }
-        
-        // Parse JSON data
-        if let data = data {
-            guard let compiled_object = parseJsonYoutubeFeaturedDataD(data: data) else {
-                return
-            }
-            if compiled_object.isEmpty == false {
-                completion(compiled_object)
-            }
-        }
-    })
-    
-    task.resume()
+        DispatchQueue.main.async { completion(Array(videos)) }
+    }.resume()
 }
 
 func fetch_most_viewed(type: String?, completion: @escaping ([MostViewed.Item]) -> Void) {
-    //Our first step is to fetch the ID of the application, a trick we can do is to grab it from the URL...
-    let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/mostViewed\(type ?? "")")!
-    var request = URLRequest(url: url)
-    request.setValue("sent-from-app", forHTTPHeaderField: "x-oldos-app")
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-        
-        if let error = error {
-            print(error)
-            return
-        }
-        
-        // Parse JSON data
-        if let data = data {
-            guard let compiled_object = parseJsonYoutubeMostViewedData(data: data) else {
-                return
-            }
-            if compiled_object.isEmpty == false {
-                completion(compiled_object)
-            }
-        }
-    })
-    
-    task.resume()
+    // no-op: MostViewedObserver now uses fetch_piped_trending_videos directly
 }
 
 func fetch_most_viewed_video(id: String?, completion: @escaping (YouTubeVideoData) -> Void) {
-    //Our first step is to fetch the ID of the application, a trick we can do is to grab it from the URL...
-    let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/video-info?query=\(id ?? "")")!
-    var request = URLRequest(url: url)
-    request.setValue("sent-from-app", forHTTPHeaderField: "x-oldos-app")
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-        
-        if let error = error {
-            print(error)
-            return
-        }
-        
-        // Parse JSON data
-        if let data = data {
-            do {
-                let decoder = JSONDecoder()
-                let compiled_object = try decoder.decode(YouTubeVideoData.self, from: data)
-                completion(compiled_object)
-            } catch {
-                print(error)
-            }
-            //    if compiled_object.isEmpty == false {ject)
-            //   }
-        }
-    })
-    
-    task.resume()
+    fetch_searched_video(id: id, completion: completion)
 }
 
 func fetch_searched_video(id: String?, completion: @escaping (YouTubeVideoData) -> Void) {
-    //Our first step is to fetch the ID of the application, a trick we can do is to grab it from the URL...
-    let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/video-info?query=\(id ?? "")")!
-    print(url, "ZKURL")
-    var request = URLRequest(url: url)
-    request.setValue("sent-from-app", forHTTPHeaderField: "x-oldos-app")
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-        
-        if let error = error {
-            print(error)
-            return
-        }
-        
-        // Parse JSON data
-        if let data = data {
-            do {
-                let decoder = JSONDecoder()
-                let compiled_object = try decoder.decode(YouTubeVideoData.self, from: data)
-                completion(compiled_object)
-            } catch {
-                print(error)
-            }
-        }
-    })
-    
-    task.resume()
+    guard let id = id, !id.isEmpty,
+          let url = URL(string: "\(pipedBase)/streams/\(id)") else { return }
+    URLSession.shared.dataTask(with: url) { data, _, error in
+        guard let data = data, error == nil,
+              let info = try? JSONDecoder().decode(PipedVideoInfo.self, from: data) else { return }
+        let best = info.videoStreams?.filter { !($0.videoOnly ?? true) }
+                                     .max(by: { ($0.height ?? 0) < ($1.height ?? 0) })
+        let streamUrl = best?.url ?? info.audioStreams?.first?.url ?? ""
+        guard let result = pipedToYTData(
+            id: id, title: info.title ?? "",
+            uploaderName: info.uploader ?? "",
+            uploaderUrl: info.uploaderUrl ?? "",
+            thumbnail: info.thumbnailUrl ?? "",
+            durationSec: info.duration ?? 0, views: info.views ?? 0,
+            likes: info.likes ?? 0, dislikes: info.dislikes ?? 0,
+            description: info.description ?? "", streamUrl: streamUrl
+        ) else { return }
+        DispatchQueue.main.async { completion(result) }
+    }.resume()
 }
 
 func fetch_comment_data(id: String?, completion: @escaping (YoutubeVideoComments) -> Void) {
-    //Our first step is to fetch the ID of the application, a trick we can do is to grab it from the URL...
-    let url = URL(string: "https://us-central1-oldos-310521.cloudfunctions.net/api/comments?query=\(id ?? "")")!
-    var request = URLRequest(url: url)
-    request.setValue("sent-from-app", forHTTPHeaderField: "x-oldos-app")
-    let task = URLSession.shared.dataTask(with: request, completionHandler: { (data, response, error) -> Void in
-        
-        if let error = error {
-            print(error)
-            return
-        }
-        
-        // Parse JSON data
-        if let data = data {
-            do {
-                let decoder = JSONDecoder()
-                let compiled_object = try decoder.decode(YoutubeVideoComments.self, from: data)
-                completion(compiled_object)
-            } catch {
-                print(error)
-            }
-            //    if compiled_object.isEmpty == false {ject)
-            //   }
-        }
-    })
-    
-    task.resume()
+    // Comments via Piped are not implemented; return empty
+    completion(YoutubeVideoComments(comments: [], continuation: nil))
 }
 
 

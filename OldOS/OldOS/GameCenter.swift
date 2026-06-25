@@ -65,10 +65,10 @@ struct GameCenterTabView : View {
                         game_center_friends_view(current_friend: $current_friend, gc_observer: gc_observer, show_friend: $show_friend, forward_or_backward: $forward_or_backward).frame(height: geometry.size.height - 57)
                             .tag("Friends")
                     case "Games":
-                        game_center_games_view().frame(height: geometry.size.height - 57)
+                        game_center_games_view(gc_observer: gc_observer).frame(height: geometry.size.height - 57)
                             .tag("Games")
                     case "Requests":
-                        game_center_requests_view().frame(height: geometry.size.height - 57)
+                        game_center_requests_view(gc_observer: gc_observer).frame(height: geometry.size.height - 57)
                             .tag("Requests")
                     default:
                         game_center_me_view(gc_observer: gc_observer).frame(height: geometry.size.height - 57)
@@ -166,7 +166,7 @@ struct game_center_me_view: View {
                             Text("Status").font(.custom("Superclarendon Bold", fixedSize: 16.5)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 86/255, green: 164/255, blue: 108/255).opacity(0.7), radius: 0, y: 0.8)
                         }
                         Spacer().frame(height:20)
-                        large_ribbon_button(ribbon: "GKRibbonButton", text: "Account: \(gc_observer.local_player.alias)@mac.com").padding([.leading, .trailing], 10)
+                        large_ribbon_button(ribbon: "GKRibbonButton", text: "Account: \(gc_observer.local_player.alias)").padding([.leading, .trailing], 10)
                         Spacer()
                     }.offset(y: topOffset < 0 ? -topOffset/2 : 0)
                     GeometryReader { proxy in
@@ -248,9 +248,9 @@ struct game_center_friends_view: View {
                                                 }
                                                 HStack {
                                                     VStack(alignment: .leading, spacing: 1) {
-                                                        Text("No Status") .font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
+                                                        Text(friend.displayName == friend.alias ? "Game Center" : friend.displayName).font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
                                                         Text(friend.alias).font(.custom("Superclarendon Bold", fixedSize: 15)).foregroundColor(.white).shadow(color: Color.black.opacity(0.2), radius: 0.5, x: 0, y: 1)
-                                                        Text("Never Played") .font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
+                                                        Text("OldOS Player").font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
                                                     }.padding([.leading], 18)
                                                     Spacer()
                                                     Image("GKDisclosureIndicator").padding([.trailing], 12).shadow(color: Color.black.opacity(0.2), radius: 0.5, x: 0, y: 1)
@@ -400,6 +400,7 @@ struct game_center_friends_destination: View {
 //** Mark: Games Views
 
 struct game_center_games_view: View {
+    @ObservedObject var gc_observer: game_center_observer
     @State var topOffset: CGFloat = 0
     @State var background_size: CGFloat = 0
     struct TopOffsetKey: PreferenceKey {
@@ -441,15 +442,15 @@ struct game_center_games_view: View {
                                     HStack {
                                         Image("OS_Icon_WIP15").resizable().frame(width:45, height: 45).cornerRadius(45*90/512).padding(.leading, 12).shadow(color: Color.black.opacity(0.2), radius: 0.5, x: 0, y: 1)
                                         VStack(alignment: .leading, spacing: 1) {
-                                            Text("1 of 1 achievements") .font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
+                                            Text("\(gc_observer.achievements.count) achievement\(gc_observer.achievements.count == 1 ? "" : "s")").font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
                                             Text("OldOS").font(.custom("Superclarendon Bold", fixedSize: 15)).foregroundColor(.white).shadow(color: Color.black.opacity(0.2), radius: 0.5, x: 0, y: 1)
-                                            Text("#1 of 10,000") .font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
+                                            Text("Game Center enabled").font(.custom("Helvetica Neue Bold", fixedSize: 12)).foregroundColor(Color(red: 29/255, green: 54/255, blue: 37/255)).shadow(color: Color(red: 105/255, green: 194/255, blue: 132/255).opacity(0.80), radius: 0, y: 1)
                                         }
                                         Spacer()
                                         Image("GKDisclosureIndicator").padding([.trailing], 12).shadow(color: Color.black.opacity(0.2), radius: 0.5, x: 0, y: 1)
                                     }
                                 }.frame(height: 65)
-                                
+
                             }
                         }.frame(height: 65).padding([.leading, .trailing], 12).padding(.top, 10)
                         Spacer().frame(height:20)
@@ -478,6 +479,7 @@ struct game_center_games_view: View {
 //** Mark: Request Views
 
 struct game_center_requests_view: View {
+    @ObservedObject var gc_observer: game_center_observer
     @State var topOffset: CGFloat = 0
     @State var background_size: CGFloat = 0
     struct TopOffsetKey: PreferenceKey {
@@ -538,22 +540,21 @@ class game_center_observer: ObservableObject {
     @Published var friends = [GKPlayer]()
     @Published var achievements = [GKAchievement]()
     @Published var local_player = GKLocalPlayer()
+    @Published var recentPlayers = [GKPlayer]()
     @ObservedObject var gameKitHelper = GameKitHelper.sharedInstance
     init() {
-        
         gameKitHelper.authenticateLocalPlayer()
-        print(GKLocalPlayer.local.alias)
         self.local_player = GKLocalPlayer.local
-        print(GKLocalPlayer.local.displayName)
         GKLocalPlayer.local.loadChallengableFriends(completionHandler: { friends, error in
             self.friends = friends ?? []
-            print(self.friends)
         })
         GKAchievement.loadAchievements(completionHandler: { achievements, error in
             self.achievements = achievements ?? []
         })
+        GKPlayer.loadRecentPlayers(completionHandler: { players, error in
+            self.recentPlayers = players ?? []
+        })
     }
-    
 }
 
 
