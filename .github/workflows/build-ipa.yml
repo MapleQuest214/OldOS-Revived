@@ -34,6 +34,7 @@ jobs:
       - name: Build app (no signing)
         working-directory: OldOS
         run: |
+          set -o pipefail
           xcodebuild \
             -project OldOS.xcodeproj \
             -scheme OldOS \
@@ -45,12 +46,31 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             build \
-            | xcpretty
+            | xcpretty --color
+
+      - name: Verify binary exists
+        run: |
+          APP_PATH=$(find "$RUNNER_TEMP/build" -name "*.app" -maxdepth 2 | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "ERROR: No .app bundle found in build output"
+            find "$RUNNER_TEMP/build" -maxdepth 3 || true
+            exit 1
+          fi
+          echo "App bundle: $APP_PATH"
+          ls -lh "$APP_PATH/"
+          BINARY_NAME=$(defaults read "$APP_PATH/Info.plist" CFBundleExecutable 2>/dev/null || basename "$APP_PATH" .app)
+          echo "Expected binary: $BINARY_NAME"
+          if [ ! -f "$APP_PATH/$BINARY_NAME" ]; then
+            echo "ERROR: Binary '$BINARY_NAME' is missing from $APP_PATH"
+            exit 1
+          fi
+          echo "Binary found: $(ls -lh "$APP_PATH/$BINARY_NAME")"
+          file "$APP_PATH/$BINARY_NAME"
 
       - name: Package into unsigned IPA
         run: |
           APP_PATH=$(find "$RUNNER_TEMP/build" -name "*.app" -maxdepth 2 | head -1)
-          echo "Found app at: $APP_PATH"
+          echo "Packaging: $APP_PATH"
           mkdir -p /tmp/Payload
           cp -r "$APP_PATH" /tmp/Payload/
           cd /tmp

@@ -136,6 +136,9 @@ struct Controller: View {
                             case "Voice Memos":
                                 multitasking_controller(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, multitasking_apps: $multitasking_apps, instant_multitasking_change: $instant_multitasking_change, current_multitasking_app: $current_multitasking_app, should_update: $should_update, show_remove: $show_remove, show_multitasking: $show_multitasking, relative_app: "Voice Memos")
                                 VoiceMemos().padding([.leading, .trailing]).transition(.scale).modifiedForMultitasking2(show_multitasking, instant_multitasking_change, current_multitasking_app == "Voice Memos")
+                            case "IPA Installer":
+                                multitasking_controller(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, multitasking_apps: $multitasking_apps, instant_multitasking_change: $instant_multitasking_change, current_multitasking_app: $current_multitasking_app, should_update: $should_update, show_remove: $show_remove, show_multitasking: $show_multitasking, relative_app: "IPA Installer")
+                                IPAInstaller(instant_multitasking_change: $instant_multitasking_change).padding([.leading, .trailing]).transition(.scale).modifiedForMultitasking2(show_multitasking, instant_multitasking_change, current_multitasking_app == "IPA Installer")
                             default:
                                 LockScreen(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height).padding([.leading, .trailing])
                             }
@@ -1147,7 +1150,7 @@ struct apps_second: View {
                 GridItem(.fixed(UIScreen.main.bounds.width/(390/85)), spacing: 1)
             ], alignment: .center, spacing: UIScreen.main.bounds.height/(844/40)*icon_scaler) {
                 app(image_name: "Contacts", app_name: "Contacts", current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, folder_offset: $folder_offset)
-                
+                app_ipa_installer(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, folder_offset: $folder_offset)
             }
             Spacer().frame(height:UIScreen.main.bounds.height/(844/40)*icon_scaler)
             Spacer()
