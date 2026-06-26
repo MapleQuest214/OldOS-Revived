@@ -34,12 +34,13 @@ private extension Data {
 private func rawDeflate(_ src: Data, outSize: Int) -> Data? {
     guard !src.isEmpty else { return nil }
     var dst = Data(count: max(outSize, src.count * 4))
+    let dstCount = dst.count
     let n = src.withUnsafeBytes { s -> Int in
         guard let sp = s.baseAddress else { return 0 }
         return dst.withUnsafeMutableBytes { d -> Int in
             guard let dp = d.baseAddress else { return 0 }
             return compression_decode_buffer(
-                dp.assumingMemoryBound(to: UInt8.self), dst.count,
+                dp.assumingMemoryBound(to: UInt8.self), dstCount,
                 sp.assumingMemoryBound(to: UInt8.self), src.count,
                 nil, COMPRESSION_ZLIB)
         }
