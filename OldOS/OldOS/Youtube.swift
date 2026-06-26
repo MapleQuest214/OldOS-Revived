@@ -12,7 +12,8 @@ import Combine
 
 // MARK: - Piped API
 
-private let pipedBase = "https://pipedapi.kavin.rocks"
+let pipedBase = "https://pipedapi.kavin.rocks"
+private let pipedFallbacks = ["https://piped-api.lunar.icu", "https://api.piped.projectsegfau.lt"]
 
 struct PipedTrendingItem: Codable {
     let url: String?; let title: String?; let thumbnail: String?
@@ -1566,20 +1567,27 @@ func fetch_featured_stats(completion: @escaping ([YoutubeVideoStats.Item]) -> Vo
 func fetch_featured_details(completion: @escaping ([YoutubeVideoDetails.Item]) -> Void) {}
 
 func fetch_piped_trending_videos(completion: @escaping ([YouTubeVideoData]) -> Void) {
-    guard let url = URL(string: "\(pipedBase)/trending?region=US") else { return }
+    _tryPipedTrending(instances: [pipedBase] + pipedFallbacks, completion: completion)
+}
+
+private func _tryPipedTrending(instances: [String], completion: @escaping ([YouTubeVideoData]) -> Void) {
+    guard let base = instances.first, let url = URL(string: "\(base)/trending?region=US") else { return }
     URLSession.shared.dataTask(with: url) { data, _, error in
-        guard let data = data, error == nil,
-              let items = try? JSONDecoder().decode([PipedTrendingItem].self, from: data) else { return }
-        let videos = items.prefix(25).compactMap { item -> YouTubeVideoData? in
-            guard let vid = item.videoId, !vid.isEmpty else { return nil }
-            return pipedToYTData(id: vid, title: item.title ?? "",
-                                 uploaderName: item.uploaderName ?? "",
-                                 uploaderUrl: item.uploaderUrl ?? "",
-                                 thumbnail: item.thumbnail ?? "",
-                                 durationSec: item.duration ?? 0, views: item.views ?? 0,
-                                 description: item.shortDescription ?? "")
+        if let data = data, error == nil,
+           let items = try? JSONDecoder().decode([PipedTrendingItem].self, from: data), !items.isEmpty {
+            let videos = items.prefix(25).compactMap { item -> YouTubeVideoData? in
+                guard let vid = item.videoId, !vid.isEmpty else { return nil }
+                return pipedToYTData(id: vid, title: item.title ?? "",
+                                     uploaderName: item.uploaderName ?? "",
+                                     uploaderUrl: item.uploaderUrl ?? "",
+                                     thumbnail: item.thumbnail ?? "",
+                                     durationSec: item.duration ?? 0, views: item.views ?? 0,
+                                     description: item.shortDescription ?? "")
+            }
+            DispatchQueue.main.async { completion(Array(videos)) }
+        } else {
+            _tryPipedTrending(instances: Array(instances.dropFirst()), completion: completion)
         }
-        DispatchQueue.main.async { completion(Array(videos)) }
     }.resume()
 }
 
@@ -1592,11 +1600,18 @@ func fetch_most_viewed_video(id: String?, completion: @escaping (YouTubeVideoDat
 }
 
 func fetch_searched_video(id: String?, completion: @escaping (YouTubeVideoData) -> Void) {
-    guard let id = id, !id.isEmpty,
-          let url = URL(string: "\(pipedBase)/streams/\(id)") else { return }
+    guard let id = id, !id.isEmpty else { return }
+    _tryPipedStreams(id: id, instances: [pipedBase] + pipedFallbacks, completion: completion)
+}
+
+private func _tryPipedStreams(id: String, instances: [String], completion: @escaping (YouTubeVideoData) -> Void) {
+    guard let base = instances.first, let url = URL(string: "\(base)/streams/\(id)") else { return }
     URLSession.shared.dataTask(with: url) { data, _, error in
         guard let data = data, error == nil,
-              let info = try? JSONDecoder().decode(PipedVideoInfo.self, from: data) else { return }
+              let info = try? JSONDecoder().decode(PipedVideoInfo.self, from: data) else {
+            _tryPipedStreams(id: id, instances: Array(instances.dropFirst()), completion: completion)
+            return
+        }
         let best = info.videoStreams?.filter { !($0.videoOnly ?? true) }
                                      .max(by: { ($0.height ?? 0) < ($1.height ?? 0) })
         let streamUrl = best?.url ?? info.audioStreams?.first?.url ?? ""

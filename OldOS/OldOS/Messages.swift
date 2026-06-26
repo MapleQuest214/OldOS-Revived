@@ -70,8 +70,8 @@ struct messages_conversation_list: View {
 
     var filteredContacts: [CNContact] {
         if searchText.isEmpty { return contacts }
-        return contacts.filter {
-            let name = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
+        return contacts.filter { contact in
+            let name = "\(contact.givenName) \(contact.familyName)"
             return name.localizedCaseInsensitiveContains(searchText)
         }
     }
@@ -159,7 +159,8 @@ struct messages_conversation_list: View {
                         LazyVStack(spacing: 0) {
                             ForEach(filteredContacts, id: \.identifier) { contact in
                                 let phone = contact.phoneNumbers.first?.value.stringValue ?? ""
-                                let name = CNContactFormatter.string(from: contact, style: .fullName) ?? phone
+                                let fullName = "\(contact.givenName) \(contact.familyName)".trimmingCharacters(in: .whitespaces)
+                                let name = fullName.isEmpty ? phone : fullName
                                 Button(action: {
                                     let digits = phone.filter { "0123456789+".contains($0) }
                                     if let url = URL(string: "sms:\(digits)") {
@@ -217,9 +218,8 @@ struct messages_conversation_list: View {
                 return
             }
             let keys: [CNKeyDescriptor] = [
-                CNContactGivenNameKey as CNKeyDescriptor,
-                CNContactFamilyNameKey as CNKeyDescriptor,
-                CNContactPhoneNumbersKey as CNKeyDescriptor
+                CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
+                CNContactPhoneNumbersKey as NSString
             ]
             let request = CNContactFetchRequest(keysToFetch: keys)
             do {
@@ -228,8 +228,8 @@ struct messages_conversation_list: View {
                     if !contact.phoneNumbers.isEmpty { results.append(contact) }
                 }
                 let sorted = results.sorted {
-                    let a = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
-                    let b = CNContactFormatter.string(from: $1, style: .fullName) ?? ""
+                    let a = "\($0.familyName) \($0.givenName)"
+                    let b = "\($1.familyName) \($1.givenName)"
                     return a < b
                 }
                 DispatchQueue.main.async { contacts = sorted; contactsLoaded = true }

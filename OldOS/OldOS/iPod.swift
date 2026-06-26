@@ -1701,6 +1701,36 @@ struct ipod_more: View {
                 }
             }.hideRowSeparator().listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)).frame(height: 44).drawingGroup()
             
+            Spacer().frame(height: 20)
+            VStack(spacing: 0) {
+                Button(action: { UIApplication.shared.open(URL(string: "music://")!) }) {
+                    HStack(alignment: .center) {
+                        Spacer().frame(width: 1, height: 44-0.95)
+                        ZStack {
+                            LinearGradient(gradient: Gradient(colors: [Color(red: 253/255, green: 90/255, blue: 100/255), Color(red: 220/255, green: 25/255, blue: 55/255)]), startPoint: .top, endPoint: .bottom)
+                                .frame(width: 25, height: 25).cornerRadius(5.5)
+                            Image(systemName: "music.note").foregroundColor(.white).font(.system(size: 13, weight: .semibold))
+                        }.frame(width: 25, height: 44-0.95)
+                        Text("Apple Music").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(.black).lineLimit(1).padding(.leading, 6)
+                        Spacer()
+                        Image("UITableNext").padding(.trailing, 12)
+                    }.padding(.leading, 15)
+                }.frame(height: 44)
+                Rectangle().fill(Color(red: 224/255, green: 224/255, blue: 224/255)).frame(height: 0.95)
+                Button(action: { UIApplication.shared.open(URL(string: "spotify://")!) }) {
+                    HStack(alignment: .center) {
+                        Spacer().frame(width: 1, height: 44-0.95)
+                        ZStack {
+                            Color(red: 30/255, green: 215/255, blue: 96/255).frame(width: 25, height: 25).cornerRadius(5.5)
+                            Image(systemName: "music.note.list").foregroundColor(.white).font(.system(size: 12, weight: .semibold))
+                        }.frame(width: 25, height: 44-0.95)
+                        Text("Spotify").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(.black).lineLimit(1).padding(.leading, 6)
+                        Spacer()
+                        Image("UITableNext").padding(.trailing, 12)
+                    }.padding(.leading, 15)
+                }.frame(height: 44)
+                Rectangle().fill(Color(red: 224/255, green: 224/255, blue: 224/255)).frame(height: 0.95)
+            }
         }.background(Color.white)
     }
 }

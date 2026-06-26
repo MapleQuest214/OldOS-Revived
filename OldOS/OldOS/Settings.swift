@@ -93,6 +93,8 @@ struct Settings: View, Equatable {
                         general_international_view(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward).transition(.asymmetric(insertion: .move(edge:forward_or_backward == false ? .trailing : .leading), removal: .move(edge:forward_or_backward == false ? .leading : .trailing)))
                     case "General_Accessibility":
                         general_accessibility_view(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward).transition(.asymmetric(insertion: .move(edge:forward_or_backward == false ? .trailing : .leading), removal: .move(edge:forward_or_backward == false ? .leading : .trailing)))
+                    case "General_Passcode":
+                        general_passcode_view(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward).transition(.asymmetric(insertion: .move(edge:forward_or_backward == false ? .trailing : .leading), removal: .move(edge:forward_or_backward == false ? .leading : .trailing)))
                     case "Mail, Contacts, Calendars":
                         mcc_view(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward).transition(.asymmetric(insertion: .move(edge:forward_or_backward == false ? .trailing : .leading), removal: .move(edge:forward_or_backward == false ? .leading : .trailing)))
                     case "MCC_Action":
@@ -1229,10 +1231,11 @@ struct general_view: View {
     var network_bluetooth = [list_row(title: "Network", content: AnyView(general_content()), destination: "General_Network"), list_row(title: "Bluetooth", content: AnyView(general_content()), destination: "General_Bluetooth")]
     var spotlight = [list_row(title: "Spotlight Search", content: AnyView(general_content()), destination: nil)]
     var autolock = [list_row(title: "Auto-Lock", content: AnyView(general_content()), destination: "General_Autolock")]
+    var passcode_lock = [list_row(title: "Passcode Lock", content: AnyView(general_content()), destination: "General_Passcode")]
     var date_accessibility = [list_row(title: "Date & Time", content: AnyView(general_content()), destination: "General_Date"), list_row(title: "Keyboard", content: AnyView(general_content()), destination: "General_Keyboard"), list_row(title: "International", content: AnyView(general_content()), destination: "General_International"), list_row(title: "Accessibility", content: AnyView(general_content()), destination: "General_Accessibility")]
     var body: some View {
         VStack(spacing:0) {
-            
+
             ZStack {
                 settings_main_list()
                 ScrollView {
@@ -1245,6 +1248,8 @@ struct general_view: View {
                         list_section(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward, content: spotlight)
                         Spacer().frame(height: 25)
                         list_section(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward, content: autolock)
+                        Spacer().frame(height: 25)
+                        list_section(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward, content: passcode_lock)
                         Spacer().frame(height: 25)
                         list_section(current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward, content: date_accessibility)
                     }
@@ -2249,6 +2254,190 @@ struct settings_main_list : View {
                 Spacer()
             }
         }
+    }
+}
+
+struct general_passcode_view: View {
+    @Binding var current_nav_view: String
+    @Binding var forward_or_backward: Bool
+    @State private var passcodeEnabled: Bool = UserDefaults.standard.string(forKey: "passcode_pin") != nil
+    @State private var showPad: Bool = false
+    @State private var padMode: String = "set"
+    @State private var pinEntry: String = ""
+    @State private var firstPin: String = ""
+    @State private var errorMsg: String = ""
+    @State private var shakeAmount: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            VStack(spacing: 0) {
+                ZStack {
+                    settings_main_list()
+                    ScrollView {
+                        VStack {
+                            Spacer().frame(height: 15)
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10).fill(Color.white)
+                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(red: 171/255, green: 171/255, blue: 171/255), lineWidth: 1.25))
+                                VStack(spacing: 0) {
+                                    if !passcodeEnabled {
+                                        Button(action: { padMode = "set"; pinEntry = ""; firstPin = ""; showPad = true }) {
+                                            HStack {
+                                                Text("Turn Passcode On").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(.black)
+                                                Spacer()
+                                                Image("UITableNext").padding(.trailing, 12)
+                                            }.padding(.leading, 16).frame(height: 44)
+                                        }
+                                    } else {
+                                        Button(action: { padMode = "disable"; pinEntry = ""; showPad = true }) {
+                                            HStack {
+                                                Text("Turn Passcode Off").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(.black)
+                                                Spacer()
+                                                Image("UITableNext").padding(.trailing, 12)
+                                            }.padding(.leading, 16).frame(height: 44)
+                                        }
+                                        Rectangle().fill(Color(red: 171/255, green: 171/255, blue: 171/255)).frame(height: 0.95).padding(.leading, 16)
+                                        Button(action: { padMode = "set"; pinEntry = ""; firstPin = ""; showPad = true }) {
+                                            HStack {
+                                                Text("Change Passcode").font(.custom("Helvetica Neue Bold", fixedSize: 18)).foregroundColor(.black)
+                                                Spacer()
+                                                Image("UITableNext").padding(.trailing, 12)
+                                            }.padding(.leading, 16).frame(height: 44)
+                                        }
+                                    }
+                                }
+                            }.frame(height: passcodeEnabled ? 88.95 : 44).padding([.leading, .trailing], 12)
+                            Spacer().frame(height: 15)
+                        }
+                    }
+                }
+            }
+            if showPad {
+                passcode_setup_pad(showPad: $showPad, padMode: $padMode, pinEntry: $pinEntry, firstPin: $firstPin, passcodeEnabled: $passcodeEnabled, errorMsg: $errorMsg, shakeAmount: $shakeAmount)
+                    .transition(.opacity)
+                    .zIndex(10)
+            }
+        }
+    }
+}
+
+struct passcode_setup_pad: View {
+    @Binding var showPad: Bool
+    @Binding var padMode: String
+    @Binding var pinEntry: String
+    @Binding var firstPin: String
+    @Binding var passcodeEnabled: Bool
+    @Binding var errorMsg: String
+    @Binding var shakeAmount: CGFloat
+
+    var promptText: String {
+        switch padMode {
+        case "disable": return "Enter Your Passcode"
+        case "confirm": return "Re-enter New Passcode"
+        default: return "Enter New Passcode"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            LinearGradient(gradient: Gradient(colors: [Color(red: 35/255, green: 35/255, blue: 35/255), Color(red: 15/255, green: 15/255, blue: 15/255)]), startPoint: .top, endPoint: .bottom)
+                .edgesIgnoringSafeArea(.all)
+            VStack(spacing: 0) {
+                Spacer().frame(height: 70)
+                Text(promptText).foregroundColor(.white).font(.custom("Helvetica Neue Bold", fixedSize: 20))
+                if !errorMsg.isEmpty {
+                    Text(errorMsg).foregroundColor(Color(red: 1, green: 0.4, blue: 0.4)).font(.custom("Helvetica Neue Regular", fixedSize: 14)).padding(.top, 6)
+                }
+                Spacer().frame(height: 22)
+                HStack(spacing: 22) {
+                    ForEach(0..<4, id: \.self) { i in
+                        Circle()
+                            .fill(i < pinEntry.count ? Color.white : Color.clear)
+                            .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 1.5))
+                            .frame(width: 14, height: 14)
+                    }
+                }.offset(x: shakeAmount)
+                Spacer().frame(height: 36)
+                VStack(spacing: 6) {
+                    ForEach([["1","2","3"],["4","5","6"],["7","8","9"],["","0","⌫"]], id: \.self) { row in
+                        HStack(spacing: 6) {
+                            ForEach(row, id: \.self) { key in
+                                if key.isEmpty {
+                                    Spacer().frame(width: 74, height: 74)
+                                } else if key == "⌫" {
+                                    Button(action: { handleKey(key) }) {
+                                        ZStack {
+                                            Circle().fill(Color.white.opacity(0.12)).frame(width: 74, height: 74)
+                                            Image(systemName: "delete.backward").foregroundColor(.white).font(.system(size: 22))
+                                        }
+                                    }
+                                } else {
+                                    Button(action: { handleKey(key) }) {
+                                        ZStack {
+                                            Circle().fill(Color.white.opacity(0.18)).overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 0.5)).frame(width: 74, height: 74)
+                                            Text(key).foregroundColor(.white).font(.custom("Helvetica Neue Light", fixedSize: 34))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer().frame(height: 24)
+                Button(action: { showPad = false; pinEntry = ""; errorMsg = "" }) {
+                    Text("Cancel").foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0)).font(.custom("Helvetica Neue Bold", fixedSize: 18))
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private func handleKey(_ key: String) {
+        if key == "⌫" {
+            if !pinEntry.isEmpty { pinEntry.removeLast() }
+            errorMsg = ""
+            return
+        }
+        guard pinEntry.count < 4 else { return }
+        pinEntry += key
+        if pinEntry.count == 4 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { processEntry() }
+        }
+    }
+
+    private func processEntry() {
+        let stored = UserDefaults.standard.string(forKey: "passcode_pin") ?? ""
+        switch padMode {
+        case "disable":
+            if pinEntry == stored {
+                UserDefaults.standard.removeObject(forKey: "passcode_pin")
+                passcodeEnabled = false
+                showPad = false
+            } else {
+                shake(); errorMsg = "Incorrect passcode"
+            }
+        case "set":
+            firstPin = pinEntry; padMode = "confirm"; pinEntry = ""; errorMsg = ""
+        case "confirm":
+            if pinEntry == firstPin {
+                UserDefaults.standard.set(pinEntry, forKey: "passcode_pin")
+                passcodeEnabled = true; showPad = false
+            } else {
+                shake(); errorMsg = "Passcodes did not match"
+                padMode = "set"; firstPin = ""
+            }
+        default: break
+        }
+    }
+
+    private func shake() {
+        let offsets: [CGFloat] = [10, -10, 8, -8, 5, -5, 0]
+        for (i, val) in offsets.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.06) {
+                withAnimation(.linear(duration: 0.06)) { shakeAmount = val }
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { pinEntry = "" }
     }
 }
 

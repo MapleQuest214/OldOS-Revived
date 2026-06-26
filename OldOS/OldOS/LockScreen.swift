@@ -13,6 +13,7 @@ import AVKit
 struct LockScreen: View {
     @Binding var current_view: String
     @State var out_slides: CGFloat = 0.0
+    @State var show_passcode_entry: Bool = false
     @State var charging: Bool = false
     @State var battery_level = UIDevice.current.batteryLevel * 100
     @Binding var apps_scale: CGFloat
@@ -44,7 +45,12 @@ struct LockScreen: View {
                     status_bar(locked: true).frame(minHeight: 24, maxHeight:24).zIndex(1)
                     lock_header().frame(minHeight: 110, maxHeight:110).transition(.move(edge: .top)).offset(y:-out_slides*1.1).zIndex(0).clipped()
                     Spacer()
-                    lock_footer(current_view: $current_view, out_slides: $out_slides, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height).frame(minHeight: 110, maxHeight:110).offset(y:out_slides).clipped()
+                    lock_footer(current_view: $current_view, out_slides: $out_slides, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height, show_passcode_entry: $show_passcode_entry).frame(minHeight: 110, maxHeight:110).offset(y:out_slides).clipped()
+                }
+                if show_passcode_entry {
+                    passcode_entry_view(current_view: $current_view, show_passcode_entry: $show_passcode_entry, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height)
+                        .zIndex(10)
+                        .transition(.opacity)
                 }
             }
         } .onReceive(battery_observer) { _ in
@@ -128,6 +134,7 @@ struct lock_footer: View {
     @Binding var apps_scale: CGFloat
     @Binding var dock_offset: CGFloat
     @Binding var apps_scale_height: CGFloat
+    @Binding var show_passcode_entry: Bool
     var body: some View {
         GeometryReader {geometry in
         ZStack {
@@ -156,7 +163,7 @@ struct lock_footer: View {
                                                                                                                                     
                     }
                 }.zIndex(1)
-                .clipShape(RoundedRectangle(cornerRadius: 10)).draggable(offset: $offset, current_view: $current_view, out_slides: $out_slides, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height, width: geometry.size.width)
+                .clipShape(RoundedRectangle(cornerRadius: 10)).draggable(offset: $offset, current_view: $current_view, out_slides: $out_slides, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height, show_passcode_entry: $show_passcode_entry, width: geometry.size.width)
                 .padding([.top, .bottom], 30.5).frame(width: 75).padding(.leading, 27.5)
                 Spacer()
                 Text("slide to unlock").font(.custom("Helvetica Neue", fixedSize: 25)).gradientForeground(colors: [Color.init(red: 78/255, green: 78/255, blue: 78/255), .white], startPoint: startPoint, endPoint: endPoint).padding(.trailing, 28)   .onAppear() {
@@ -244,8 +251,8 @@ extension View {
     }
 }
 extension View {
-    func draggable(offset: Binding<CGPoint>, current_view: Binding<String>, out_slides: Binding<CGFloat>, apps_scale: Binding<CGFloat>, dock_offset: Binding<CGFloat>, apps_scale_height: Binding<CGFloat>, width: CGFloat) -> some View {
-        return modifier(DraggableView(offset: offset, current_view: current_view, out_slides: out_slides, apps_scale: apps_scale, dock_offset: dock_offset, apps_scale_height: apps_scale_height, width: width))
+    func draggable(offset: Binding<CGPoint>, current_view: Binding<String>, out_slides: Binding<CGFloat>, apps_scale: Binding<CGFloat>, dock_offset: Binding<CGFloat>, apps_scale_height: Binding<CGFloat>, show_passcode_entry: Binding<Bool>, width: CGFloat) -> some View {
+        return modifier(DraggableView(offset: offset, current_view: current_view, out_slides: out_slides, apps_scale: apps_scale, dock_offset: dock_offset, apps_scale_height: apps_scale_height, show_passcode_entry: show_passcode_entry, width: width))
   }
 }
 struct DraggableView: ViewModifier {
@@ -256,6 +263,7 @@ struct DraggableView: ViewModifier {
     @Binding var apps_scale: CGFloat
     @Binding var dock_offset: CGFloat
     @Binding var apps_scale_height: CGFloat
+    @Binding var show_passcode_entry: Bool
     var width: CGFloat
   func body(content: Content) -> some View {
     content
@@ -273,23 +281,23 @@ struct DraggableView: ViewModifier {
             print(offset.x, width - (50+81.5))
         }.onEnded { value in
             if self.offset.x >= width - (50+81) {
-                //unlock
                 playSounds("unlock.aiff")
                 self.offset.x = width - (50+81)
-                withAnimation(.easeIn(duration: 0.15)) {
-                    out_slides = 120
-                }
-                DispatchQueue.main.asyncAfter(deadline:.now()+0.17) {
-                    self.current_view = "HS"
-                }
-                DispatchQueue.main.asyncAfter(deadline:.now()+0.17) {
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        apps_scale = 1
-                        dock_offset = 0
-                        apps_scale_height = 1
+                let savedPin = UserDefaults.standard.string(forKey: "passcode_pin")
+                if savedPin != nil {
+                    withAnimation(.linear(duration: 0.15)) { self.offset.x = 0 }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { show_passcode_entry = true }
+                } else {
+                    withAnimation(.easeIn(duration: 0.15)) { out_slides = 120 }
+                    DispatchQueue.main.asyncAfter(deadline:.now()+0.17) { self.current_view = "HS" }
+                    DispatchQueue.main.asyncAfter(deadline:.now()+0.17) {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            apps_scale = 1
+                            dock_offset = 0
+                            apps_scale_height = 1
+                        }
                     }
                 }
-                print("unlocked")
             } else {
                 withAnimation(.linear(duration: 0.15)) {
                     self.offset.x = 0
@@ -312,6 +320,98 @@ struct DraggableView: ViewModifier {
         }
             audioPlayer.setVolume(0.05, fadeDuration: 1.0)
         audioPlayer.play()
+        }
+    }
+}
+
+struct passcode_entry_view: View {
+    @Binding var current_view: String
+    @Binding var show_passcode_entry: Bool
+    @Binding var apps_scale: CGFloat
+    @Binding var dock_offset: CGFloat
+    @Binding var apps_scale_height: CGFloat
+    @State private var entered: String = ""
+    @State private var shakeAmount: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            LinearGradient(gradient: Gradient(colors: [Color(red: 35/255, green: 35/255, blue: 35/255), Color(red: 15/255, green: 15/255, blue: 15/255)]), startPoint: .top, endPoint: .bottom)
+                .edgesIgnoringSafeArea(.all)
+            VStack(spacing: 0) {
+                Spacer().frame(height: 70)
+                Text("Enter Passcode").foregroundColor(.white).font(.custom("Helvetica Neue Bold", fixedSize: 20))
+                Spacer().frame(height: 22)
+                HStack(spacing: 22) {
+                    ForEach(0..<4, id: \.self) { i in
+                        Circle()
+                            .fill(i < entered.count ? Color.white : Color.clear)
+                            .overlay(Circle().stroke(Color.white.opacity(0.8), lineWidth: 1.5))
+                            .frame(width: 14, height: 14)
+                    }
+                }.offset(x: shakeAmount)
+                Spacer().frame(height: 36)
+                VStack(spacing: 6) {
+                    ForEach([["1","2","3"],["4","5","6"],["7","8","9"],["","0","⌫"]], id: \.self) { row in
+                        HStack(spacing: 6) {
+                            ForEach(row, id: \.self) { key in
+                                if key.isEmpty {
+                                    Spacer().frame(width: 74, height: 74)
+                                } else if key == "⌫" {
+                                    Button(action: { handleKey(key) }) {
+                                        ZStack {
+                                            Circle().fill(Color.white.opacity(0.12)).frame(width: 74, height: 74)
+                                            Image(systemName: "delete.backward").foregroundColor(.white).font(.system(size: 22))
+                                        }
+                                    }
+                                } else {
+                                    Button(action: { handleKey(key) }) {
+                                        ZStack {
+                                            Circle().fill(Color.white.opacity(0.18)).overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 0.5)).frame(width: 74, height: 74)
+                                            Text(key).foregroundColor(.white).font(.custom("Helvetica Neue Light", fixedSize: 34))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer().frame(height: 24)
+                Button(action: { show_passcode_entry = false }) {
+                    Text("Cancel").foregroundColor(Color(red: 0.4, green: 0.7, blue: 1.0)).font(.custom("Helvetica Neue Bold", fixedSize: 18))
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private func handleKey(_ key: String) {
+        if key == "⌫" {
+            if !entered.isEmpty { entered.removeLast() }
+            return
+        }
+        guard entered.count < 4 else { return }
+        entered += key
+        if entered.count == 4 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { checkPin() }
+        }
+    }
+
+    private func checkPin() {
+        let savedPin = UserDefaults.standard.string(forKey: "passcode_pin") ?? ""
+        if entered == savedPin {
+            show_passcode_entry = false
+            withAnimation(.easeInOut(duration: 0.5)) {
+                apps_scale = 1; dock_offset = 0; apps_scale_height = 1
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { current_view = "HS" }
+        } else {
+            let offsets: [CGFloat] = [10, -10, 8, -8, 5, -5, 0]
+            for (i, val) in offsets.enumerated() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.06) {
+                    withAnimation(.linear(duration: 0.06)) { shakeAmount = val }
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { entered = "" }
         }
     }
 }
