@@ -551,7 +551,7 @@ class game_center_observer: ObservableObject {
         GKAchievement.loadAchievements(completionHandler: { achievements, error in
             self.achievements = achievements ?? []
         })
-        GKPlayer.loadRecentPlayers(completionHandler: { players, error in
+        GKLocalPlayer.local.loadRecentPlayers(completionHandler: { players, error in
             self.recentPlayers = players ?? []
         })
     }
