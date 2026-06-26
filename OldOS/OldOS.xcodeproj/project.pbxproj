@@ -1236,6 +1236,20 @@
 		0D9F02ED2EAE721100D9AAB4 /* Voice Memos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02E12EAE721100D9AAB4 /* Voice Memos.swift */; };
 		0D9F02EE2EAE721100D9AAB4 /* Voice Memos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02E12EAE721100D9AAB4 /* Voice Memos.swift */; };
 		0D9F02EF2EAE721100D9AAB4 /* Voice Memos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02E12EAE721100D9AAB4 /* Voice Memos.swift */; };
+		0D9F02F12EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F22EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F32EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F42EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F52EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F62EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F72EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F82EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02F92EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02FA2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02FB2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02FC2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02FD2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
+		0D9F02FE2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */; };
 		0DAA7CF726CB542800F62A27 /* XCDYouTubeKit in Frameworks */ = {isa = PBXBuildFile; productRef = 0DAA7CF626CB542800F62A27 /* XCDYouTubeKit */; };
 		0DB3F0A92683D0E300FBFAD8 /* ImageMoveAndScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB3F0A72683D0E200FBFAD8 /* ImageMoveAndScale.swift */; };
 		0DB3F0AA2683D0E300FBFAD8 /* ImageMoveAndScale+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB3F0A82683D0E300FBFAD8 /* ImageMoveAndScale+Extensions.swift */; };
@@ -1474,6 +1488,7 @@
 		0D8E49592769397A007A4100 /* Camera-SwiftUI-main */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Camera-SwiftUI-main"; sourceTree = "<group>"; };
 		0D90AADF2EAD25B1001366C9 /* Compass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compass.swift; sourceTree = "<group>"; };
 		0D9F02E12EAE721100D9AAB4 /* Voice Memos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Voice Memos.swift"; sourceTree = "<group>"; };
+		0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPAInstaller.swift; sourceTree = "<group>"; };
 		0DA3677F2EAD7C35002DFF8A /* mailcore2 */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = mailcore2; sourceTree = "<group>"; };
 		0DB3F0A72683D0E200FBFAD8 /* ImageMoveAndScale.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageMoveAndScale.swift; sourceTree = "<group>"; };
 		0DB3F0A82683D0E300FBFAD8 /* ImageMoveAndScale+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "ImageMoveAndScale+Extensions.swift"; sourceTree = "<group>"; };
@@ -1927,6 +1942,7 @@
 				0D804455265C78C500000171 /* Messages.swift */,
 				0D90AADF2EAD25B1001366C9 /* Compass.swift */,
 				0D9F02E12EAE721100D9AAB4 /* Voice Memos.swift */,
+				0D9F02F02EAE721100D9AAB4 /* IPAInstaller.swift */,
 				0D8044822662956100000171 /* Photos.swift */,
 				0D80448A26653CE200000171 /* Stocks.swift */,
 				0DEF67332617668200341037 /* Note.xcdatamodeld */,
@@ -3200,6 +3216,7 @@
 				0D18DF44281C408500C720F9 /* DALinedTextView.m in Sources */,
 				0D18DF45281C408500C720F9 /* iCarousel.m in Sources */,
 				0D9F02EE2EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F12EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D18DF46281C408500C720F9 /* SearchPlistCodable.swift in Sources */,
 				0D18DF47281C408500C720F9 /* USRuleset.swift in Sources */,
 				0D18DF48281C408500C720F9 /* ReflectionView.m in Sources */,
@@ -3256,6 +3273,7 @@
 				0D249DBE272270C300C69F8D /* DALinedTextView.m in Sources */,
 				0D249DBF272270C300C69F8D /* iCarousel.m in Sources */,
 				0D9F02E32EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F22EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D249DC0272270C300C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D249DC1272270C300C69F8D /* USRuleset.swift in Sources */,
 				0D249DC2272270C300C69F8D /* ReflectionView.m in Sources */,
@@ -3312,6 +3330,7 @@
 				0D249E342722715B00C69F8D /* DALinedTextView.m in Sources */,
 				0D249E352722715B00C69F8D /* iCarousel.m in Sources */,
 				0D9F02E42EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F32EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D249E362722715B00C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D249E372722715B00C69F8D /* USRuleset.swift in Sources */,
 				0D249E382722715B00C69F8D /* ReflectionView.m in Sources */,
@@ -3368,6 +3387,7 @@
 				0D249EAA2722715C00C69F8D /* DALinedTextView.m in Sources */,
 				0D249EAB2722715C00C69F8D /* iCarousel.m in Sources */,
 				0D9F02E52EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F42EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D249EAC2722715C00C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D249EAD2722715C00C69F8D /* USRuleset.swift in Sources */,
 				0D249EAE2722715C00C69F8D /* ReflectionView.m in Sources */,
@@ -3424,6 +3444,7 @@
 				0D249F202722715D00C69F8D /* DALinedTextView.m in Sources */,
 				0D249F212722715D00C69F8D /* iCarousel.m in Sources */,
 				0D9F02E62EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F52EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D249F222722715D00C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D249F232722715D00C69F8D /* USRuleset.swift in Sources */,
 				0D249F242722715D00C69F8D /* ReflectionView.m in Sources */,
@@ -3480,6 +3501,7 @@
 				0D249F962722715E00C69F8D /* DALinedTextView.m in Sources */,
 				0D249F972722715E00C69F8D /* iCarousel.m in Sources */,
 				0D9F02E72EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F62EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D249F982722715E00C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D249F992722715E00C69F8D /* USRuleset.swift in Sources */,
 				0D249F9A2722715E00C69F8D /* ReflectionView.m in Sources */,
@@ -3536,6 +3558,7 @@
 				0D24A00C2722716000C69F8D /* DALinedTextView.m in Sources */,
 				0D24A00D2722716000C69F8D /* iCarousel.m in Sources */,
 				0D9F02E82EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F72EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D24A00E2722716000C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D24A00F2722716000C69F8D /* USRuleset.swift in Sources */,
 				0D24A0102722716000C69F8D /* ReflectionView.m in Sources */,
@@ -3592,6 +3615,7 @@
 				0D24A0822722716500C69F8D /* DALinedTextView.m in Sources */,
 				0D24A0832722716500C69F8D /* iCarousel.m in Sources */,
 				0D9F02E92EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F82EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D24A0842722716500C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D24A0852722716500C69F8D /* USRuleset.swift in Sources */,
 				0D24A0862722716500C69F8D /* ReflectionView.m in Sources */,
@@ -3648,6 +3672,7 @@
 				0D24A0F82722716600C69F8D /* DALinedTextView.m in Sources */,
 				0D24A0F92722716600C69F8D /* iCarousel.m in Sources */,
 				0D9F02EA2EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02F92EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D24A0FA2722716600C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D24A0FB2722716600C69F8D /* USRuleset.swift in Sources */,
 				0D24A0FC2722716600C69F8D /* ReflectionView.m in Sources */,
@@ -3704,6 +3729,7 @@
 				0D24A16E2722719000C69F8D /* DALinedTextView.m in Sources */,
 				0D24A16F2722719000C69F8D /* iCarousel.m in Sources */,
 				0D9F02EB2EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02FA2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D24A1702722719000C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D24A1712722719000C69F8D /* USRuleset.swift in Sources */,
 				0D24A1722722719000C69F8D /* ReflectionView.m in Sources */,
@@ -3760,6 +3786,7 @@
 				0D24A1E42722719400C69F8D /* DALinedTextView.m in Sources */,
 				0D24A1E52722719400C69F8D /* iCarousel.m in Sources */,
 				0D9F02EC2EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02FB2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D24A1E62722719400C69F8D /* SearchPlistCodable.swift in Sources */,
 				0D24A1E72722719400C69F8D /* USRuleset.swift in Sources */,
 				0D24A1E82722719400C69F8D /* ReflectionView.m in Sources */,
@@ -3816,6 +3843,7 @@
 				0DEF67242613CBDE00341037 /* DALinedTextView.m in Sources */,
 				0DC40DED2715DA7600BE910C /* iCarousel.m in Sources */,
 				0D9F02E22EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02FC2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0DEF6710261101AE00341037 /* SearchPlistCodable.swift in Sources */,
 				0D11D89725EDD2BC00AB2F2B /* USRuleset.swift in Sources */,
 				0DC40DEE2715DA7600BE910C /* ReflectionView.m in Sources */,
@@ -3888,6 +3916,7 @@
 				0D6715CA2864BCD0002CCC47 /* DALinedTextView.m in Sources */,
 				0D6715CB2864BCD0002CCC47 /* iCarousel.m in Sources */,
 				0D9F02EF2EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02FD2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0D6715CC2864BCD0002CCC47 /* SearchPlistCodable.swift in Sources */,
 				0D6715CD2864BCD0002CCC47 /* USRuleset.swift in Sources */,
 				0D6715CE2864BCD0002CCC47 /* ReflectionView.m in Sources */,
@@ -3944,6 +3973,7 @@
 				0DBD28E1274C70F8003120D9 /* DALinedTextView.m in Sources */,
 				0DBD28E2274C70F8003120D9 /* iCarousel.m in Sources */,
 				0D9F02ED2EAE721100D9AAB4 /* Voice Memos.swift in Sources */,
+				0D9F02FE2EAE721100D9AAB4 /* IPAInstaller.swift in Sources */,
 				0DBD28E3274C70F8003120D9 /* SearchPlistCodable.swift in Sources */,
 				0DBD28E4274C70F8003120D9 /* USRuleset.swift in Sources */,
 				0DBD28E5274C70F8003120D9 /* ReflectionView.m in Sources */,

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreData
+import MessageUI
 
 struct Notes: View {
     @State var current_nav_view: String = "Main"
