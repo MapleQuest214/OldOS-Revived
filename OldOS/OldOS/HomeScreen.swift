@@ -137,6 +137,12 @@ struct Controller: View {
                             case "Voice Memos":
                                 multitasking_controller(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, multitasking_apps: $multitasking_apps, instant_multitasking_change: $instant_multitasking_change, current_multitasking_app: $current_multitasking_app, should_update: $should_update, show_remove: $show_remove, show_multitasking: $show_multitasking, relative_app: "Voice Memos")
                                 VoiceMemos().padding([.leading, .trailing]).transition(.scale).modifiedForMultitasking2(show_multitasking, instant_multitasking_change, current_multitasking_app == "Voice Memos")
+                            case "Clock":
+                                multitasking_controller(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, multitasking_apps: $multitasking_apps, instant_multitasking_change: $instant_multitasking_change, current_multitasking_app: $current_multitasking_app, should_update: $should_update, show_remove: $show_remove, show_multitasking: $show_multitasking, relative_app: "Clock")
+                                ClockApp().padding([.leading, .trailing]).transition(.scale).modifiedForMultitasking2(show_multitasking, instant_multitasking_change, current_multitasking_app == "Clock")
+                            case "Calculator":
+                                multitasking_controller(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, multitasking_apps: $multitasking_apps, instant_multitasking_change: $instant_multitasking_change, current_multitasking_app: $current_multitasking_app, should_update: $should_update, show_remove: $show_remove, show_multitasking: $show_multitasking, relative_app: "Calculator")
+                                CalculatorApp().padding([.leading, .trailing]).transition(.scale).modifiedForMultitasking2(show_multitasking, instant_multitasking_change, current_multitasking_app == "Calculator")
                             default:
                                 LockScreen(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height).padding([.leading, .trailing])
                             }
@@ -1479,17 +1485,15 @@ struct app: View {
     
     var body: some View {
         Button(action: {
-            if !["Clock", "Calculator"].contains(app_name) {
-                if !is_folder_app {
-                    withAnimation(.linear(duration: 0.32)) {
-                        apps_scale = 4
-                        dock_offset = 100
-                    }
+            if !is_folder_app {
+                withAnimation(.linear(duration: 0.32)) {
+                    apps_scale = 4
+                    dock_offset = 100
                 }
-                DispatchQueue.main.asyncAfter(deadline:.now()+0.01) {
-                    withAnimation(.linear(duration: 0.32)) {
-                        current_view = app_name
-                    }
+            }
+            DispatchQueue.main.asyncAfter(deadline:.now()+0.01) {
+                withAnimation(.linear(duration: 0.32)) {
+                    current_view = app_name
                 }
             }
         }) {

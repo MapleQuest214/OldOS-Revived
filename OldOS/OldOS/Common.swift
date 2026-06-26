@@ -2857,3 +2857,469 @@ struct MailComposeView: UIViewControllerRepresentable {
         }
     }
 }
+
+// MARK: - Calculator App
+
+struct CalculatorApp: View {
+    @State private var display = "0"
+    @State private var firstOp: Double? = nil
+    @State private var op: String? = nil
+    @State private var needsReset = false
+
+    private let rows: [[String]] = [
+        ["AC", "+/-", "%", "÷"],
+        ["7", "8", "9", "×"],
+        ["4", "5", "6", "−"],
+        ["1", "2", "3", "+"],
+        ["0", ".", "="]
+    ]
+
+    private func buttonColor(_ label: String) -> Color {
+        switch label {
+        case "÷", "×", "−", "+", "=": return Color(red: 1.0, green: 0.62, blue: 0.04)
+        case "AC", "+/-", "%": return Color(red: 0.65, green: 0.65, blue: 0.65)
+        default: return Color(red: 0.2, green: 0.2, blue: 0.2)
+        }
+    }
+
+    private func tapped(_ label: String) {
+        switch label {
+        case "0"..."9":
+            if display == "0" || needsReset {
+                display = needsReset ? label : (display == "0" ? label : display + label)
+                if needsReset { needsReset = false }
+            } else {
+                if display.count < 9 { display += label }
+            }
+        case ".":
+            if needsReset { display = "0."; needsReset = false; return }
+            if !display.contains(".") { display += "." }
+        case "AC":
+            display = "0"; firstOp = nil; op = nil; needsReset = false
+        case "+/-":
+            if let v = Double(display) { display = formatResult(-v) }
+        case "%":
+            if let v = Double(display) { display = formatResult(v / 100) }
+        case "÷", "×", "−", "+":
+            if let v = Double(display) {
+                if let prev = firstOp, let currentOp = op, !needsReset {
+                    firstOp = compute(prev, v, currentOp)
+                    display = formatResult(firstOp!)
+                } else {
+                    firstOp = v
+                }
+            }
+            op = label; needsReset = true
+        case "=":
+            if let v = Double(display), let prev = firstOp, let currentOp = op {
+                let result = compute(prev, v, currentOp)
+                display = formatResult(result)
+                firstOp = result
+                op = nil
+                needsReset = true
+            }
+        default: break
+        }
+    }
+
+    private func compute(_ a: Double, _ b: Double, _ operation: String) -> Double {
+        switch operation {
+        case "+": return a + b
+        case "−": return a - b
+        case "×": return a * b
+        case "÷": return b == 0 ? 0 : a / b
+        default: return b
+        }
+    }
+
+    private func formatResult(_ v: Double) -> String {
+        if v == v.rounded() && abs(v) < 1e9 { return String(Int(v)) }
+        let s = String(format: "%.8g", v)
+        return s.count > 9 ? String(format: "%.3e", v) : s
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Color.black.ignoresSafeArea()
+                VStack(spacing: 0) {
+                    status_bar_in_app().frame(height: 24)
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Text(display)
+                            .font(.system(size: display.count > 7 ? 44 : 72, weight: .light))
+                            .foregroundColor(.white)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 8)
+                    }
+                    VStack(spacing: 1) {
+                        ForEach(rows, id: \.self) { row in
+                            HStack(spacing: 1) {
+                                ForEach(row, id: \.self) { label in
+                                    let isZero = label == "0" && row == rows.last
+                                    let btnW = isZero
+                                        ? (geometry.size.width - 4) / 4 * 2 + 1
+                                        : (geometry.size.width - 4) / 4
+                                    Button(action: { tapped(label) }) {
+                                        ZStack {
+                                            buttonColor(label)
+                                            Text(label)
+                                                .font(.system(size: 32, weight: .medium))
+                                                .foregroundColor(.white)
+                                                .frame(maxWidth: .infinity, alignment: isZero ? .leading : .center)
+                                                .padding(.leading, isZero ? 26 : 0)
+                                        }
+                                        .frame(width: btnW, height: (geometry.size.width - 4) / 4)
+                                        .cornerRadius((geometry.size.width - 4) / 8)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.bottom, 8)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Clock App
+
+private struct ClockCity: Identifiable {
+    let id = UUID()
+    let name: String
+    let timeZoneID: String
+    var currentTime: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone(identifier: timeZoneID)
+        return formatter.string(from: Date())
+    }
+    var region: String {
+        let parts = timeZoneID.split(separator: "/")
+        return parts.first.map(String.init) ?? ""
+    }
+}
+
+private let clockCities: [ClockCity] = [
+    ClockCity(name: "New York",    timeZoneID: "America/New_York"),
+    ClockCity(name: "Los Angeles", timeZoneID: "America/Los_Angeles"),
+    ClockCity(name: "Chicago",     timeZoneID: "America/Chicago"),
+    ClockCity(name: "London",      timeZoneID: "Europe/London"),
+    ClockCity(name: "Paris",       timeZoneID: "Europe/Paris"),
+    ClockCity(name: "Tokyo",       timeZoneID: "Asia/Tokyo"),
+    ClockCity(name: "Sydney",      timeZoneID: "Australia/Sydney"),
+    ClockCity(name: "Dubai",       timeZoneID: "Asia/Dubai"),
+]
+
+struct ClockApp: View {
+    @State private var selectedTab = "World Clock"
+    private let tabs = ["World Clock", "Alarm", "Stopwatch", "Timer"]
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Color.black.ignoresSafeArea()
+                VStack(spacing: 0) {
+                    status_bar_in_app().frame(height: 24)
+                    // Title bar
+                    ZStack {
+                        LinearGradient(gradient: Gradient(stops: [
+                            .init(color: Color(red: 0, green: 0, blue: 0), location: 0),
+                            .init(color: Color(red: 84/255, green: 84/255, blue: 84/255), location: 0.02),
+                            .init(color: Color(red: 59/255, green: 59/255, blue: 59/255), location: 0.04),
+                            .init(color: Color(red: 29/255, green: 29/255, blue: 29/255), location: 0.5),
+                            .init(color: Color(red: 7.5/255, green: 7.5/255, blue: 7.5/255), location: 0.51),
+                            .init(color: Color(red: 7.5/255, green: 7.5/255, blue: 7.5/255), location: 1)
+                        ]), startPoint: .top, endPoint: .bottom)
+                        Text(selectedTab)
+                            .font(.custom("Helvetica Neue Bold", fixedSize: 20))
+                            .foregroundColor(.white)
+                    }
+                    .frame(height: 44)
+                    // Content
+                    switch selectedTab {
+                    case "World Clock": ClockWorldClockView()
+                    case "Alarm": ClockAlarmView()
+                    case "Stopwatch": ClockStopwatchView()
+                    case "Timer": ClockTimerView()
+                    default: ClockWorldClockView()
+                    }
+                    // Tab bar
+                    ZStack {
+                        Rectangle().fill(LinearGradient(gradient: Gradient(stops: [
+                            .init(color: Color(red: 0, green: 0, blue: 0), location: 0),
+                            .init(color: Color(red: 84/255, green: 84/255, blue: 84/255), location: 0.02),
+                            .init(color: Color(red: 59/255, green: 59/255, blue: 59/255), location: 0.04),
+                            .init(color: Color(red: 29/255, green: 29/255, blue: 29/255), location: 0.5),
+                            .init(color: Color(red: 7.5/255, green: 7.5/255, blue: 7.5/255), location: 0.51),
+                            .init(color: Color(red: 7.5/255, green: 7.5/255, blue: 7.5/255), location: 1)
+                        ]), startPoint: .top, endPoint: .bottom)).frame(height: 49)
+                        HStack(spacing: 0) {
+                            ForEach(tabs, id: \.self) { tab in
+                                Button(action: { selectedTab = tab }) {
+                                    VStack(spacing: 2) {
+                                        Image(systemName: clockTabIcon(tab))
+                                            .font(.system(size: 22))
+                                            .foregroundColor(selectedTab == tab ? Color(red: 1.0, green: 0.8, blue: 0.0) : Color(red: 0.6, green: 0.6, blue: 0.6))
+                                        Text(tab == "World Clock" ? "World" : tab)
+                                            .font(.custom("Helvetica Neue Regular", fixedSize: 9))
+                                            .foregroundColor(selectedTab == tab ? Color(red: 1.0, green: 0.8, blue: 0.0) : Color(red: 0.6, green: 0.6, blue: 0.6))
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                            }
+                        }
+                        .frame(height: 49)
+                    }
+                }
+            }
+        }
+    }
+
+    private func clockTabIcon(_ tab: String) -> String {
+        switch tab {
+        case "World Clock": return "globe"
+        case "Alarm": return "alarm"
+        case "Stopwatch": return "stopwatch"
+        case "Timer": return "timer"
+        default: return "clock"
+        }
+    }
+}
+
+private struct ClockWorldClockView: View {
+    private let timer = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
+    @State private var tick = 0
+
+    var body: some View {
+        ScrollView(showsIndicators: true) {
+            LazyVStack(spacing: 0) {
+                ForEach(clockCities) { city in
+                    VStack(spacing: 0) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(city.name)
+                                    .font(.custom("Helvetica Neue Bold", fixedSize: 20))
+                                    .foregroundColor(.white)
+                                Text(city.region)
+                                    .font(.custom("Helvetica Neue Regular", fixedSize: 13))
+                                    .foregroundColor(Color(red: 0.6, green: 0.6, blue: 0.6))
+                            }
+                            Spacer()
+                            Text(city.currentTime)
+                                .font(.system(size: 42, weight: .thin))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        Rectangle().fill(Color(red: 0.2, green: 0.2, blue: 0.2)).frame(height: 0.5).padding(.leading, 16)
+                    }
+                }
+            }
+        }
+        .background(Color.black)
+        .onReceive(timer) { _ in tick += 1 }
+    }
+}
+
+private struct ClockAlarmView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: "alarm.fill")
+                .font(.system(size: 60))
+                .foregroundColor(Color(red: 1.0, green: 0.8, blue: 0.0))
+            Text("Alarms")
+                .font(.custom("Helvetica Neue Bold", fixedSize: 22))
+                .foregroundColor(.white)
+            Text("Manage alarms in the system Clock app.")
+                .font(.custom("Helvetica Neue Regular", fixedSize: 15))
+                .foregroundColor(Color(red: 0.6, green: 0.6, blue: 0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            Button(action: {
+                UIApplication.shared.open(URL(string: "clock-alarm://")!)
+            }) {
+                Text("Open Clock App")
+                    .font(.custom("Helvetica Neue Bold", fixedSize: 17))
+                    .foregroundColor(.black)
+                    .frame(width: 200, height: 44)
+                    .background(Color(red: 1.0, green: 0.8, blue: 0.0))
+                    .cornerRadius(8)
+            }
+            Spacer()
+        }
+        .background(Color.black)
+    }
+}
+
+private struct ClockStopwatchView: View {
+    private let displayTimer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+    @State private var running = false
+    @State private var elapsed: TimeInterval = 0
+    @State private var startDate: Date? = nil
+    @State private var accumulated: TimeInterval = 0
+    @State private var laps: [TimeInterval] = []
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            Text(formatTime(elapsed))
+                .font(.system(size: 70, weight: .thin, design: .monospaced))
+                .foregroundColor(.white)
+                .padding(.vertical, 20)
+            HStack(spacing: 20) {
+                Button(action: tapLapReset) {
+                    Circle()
+                        .fill(Color(red: 0.25, green: 0.25, blue: 0.25))
+                        .overlay(
+                            Text(running ? "Lap" : "Reset")
+                                .font(.custom("Helvetica Neue Bold", fixedSize: 17))
+                                .foregroundColor(running || elapsed > 0 ? .white : Color(red: 0.5, green: 0.5, blue: 0.5))
+                        )
+                        .frame(width: 80, height: 80)
+                }
+                .disabled(!running && elapsed == 0)
+                Spacer()
+                Button(action: tapStartStop) {
+                    Circle()
+                        .fill(running ? Color(red: 0.2, green: 0.5, blue: 0.2) : Color(red: 0.6, green: 0.15, blue: 0.15))
+                        .overlay(
+                            Text(running ? "Stop" : "Start")
+                                .font(.custom("Helvetica Neue Bold", fixedSize: 17))
+                                .foregroundColor(.white)
+                        )
+                        .frame(width: 80, height: 80)
+                }
+            }
+            .padding(.horizontal, 30)
+            Spacer().frame(height: 20)
+            Rectangle().fill(Color(red: 0.2, green: 0.2, blue: 0.2)).frame(height: 0.5)
+            ScrollView(showsIndicators: true) {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(laps.reversed().enumerated()), id: \.offset) { i, lap in
+                        HStack {
+                            Text("Lap \(laps.count - i)")
+                                .font(.custom("Helvetica Neue Regular", fixedSize: 17))
+                                .foregroundColor(.white)
+                            Spacer()
+                            Text(formatTime(lap))
+                                .font(.system(size: 17, weight: .regular, design: .monospaced))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(height: 44)
+                        Rectangle().fill(Color(red: 0.2, green: 0.2, blue: 0.2)).frame(height: 0.5).padding(.leading, 16)
+                    }
+                }
+            }
+        }
+        .background(Color.black)
+        .onReceive(displayTimer) { now in
+            guard running, let start = startDate else { return }
+            elapsed = accumulated + now.timeIntervalSince(start)
+        }
+    }
+
+    private func tapStartStop() {
+        if running {
+            accumulated = elapsed
+            startDate = nil
+        } else {
+            startDate = Date()
+        }
+        running.toggle()
+    }
+
+    private func tapLapReset() {
+        if running {
+            laps.append(elapsed)
+        } else {
+            elapsed = 0; accumulated = 0; laps = []
+        }
+    }
+
+    private func formatTime(_ t: TimeInterval) -> String {
+        let mins = Int(t) / 60
+        let secs = Int(t) % 60
+        let cs = Int((t - Double(Int(t))) * 100)
+        return String(format: "%02d:%02d.%02d", mins, secs, cs)
+    }
+}
+
+private struct ClockTimerView: View {
+    private let timerPublisher = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var totalSeconds = 0
+    @State private var remaining = 0
+    @State private var running = false
+    @State private var inputMinutes = 0
+    @State private var inputSeconds = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            if running || remaining > 0 {
+                Text(formatRemaining(remaining))
+                    .font(.system(size: 70, weight: .thin, design: .monospaced))
+                    .foregroundColor(remaining <= 10 ? .red : .white)
+                    .padding(.bottom, 30)
+                HStack(spacing: 40) {
+                    Button(action: { running = false; remaining = 0 }) {
+                        Circle().fill(Color(red: 0.25, green: 0.25, blue: 0.25))
+                            .overlay(Text("Cancel").font(.custom("Helvetica Neue Bold", fixedSize: 16)).foregroundColor(.white))
+                            .frame(width: 80, height: 80)
+                    }
+                    Button(action: { running.toggle() }) {
+                        Circle().fill(running ? Color(red: 0.6, green: 0.15, blue: 0.15) : Color(red: 0.2, green: 0.5, blue: 0.2))
+                            .overlay(Text(running ? "Pause" : "Resume").font(.custom("Helvetica Neue Bold", fixedSize: 14)).foregroundColor(.white))
+                            .frame(width: 80, height: 80)
+                    }
+                }
+            } else {
+                // Picker-style input
+                HStack(spacing: 0) {
+                    Picker("", selection: $inputMinutes) {
+                        ForEach(0..<60) { Text("\($0) min").tag($0) }
+                    }
+                    .pickerStyle(WheelPickerStyle())
+                    .frame(width: 160)
+                    Picker("", selection: $inputSeconds) {
+                        ForEach(0..<60) { Text("\($0) sec").tag($0) }
+                    }
+                    .pickerStyle(WheelPickerStyle())
+                    .frame(width: 160)
+                }
+                .colorScheme(.dark)
+                .padding(.bottom, 20)
+                Button(action: startTimer) {
+                    Text("Start")
+                        .font(.custom("Helvetica Neue Bold", fixedSize: 18))
+                        .foregroundColor(.black)
+                        .frame(width: 160, height: 44)
+                        .background(Color(red: 1.0, green: 0.8, blue: 0.0))
+                        .cornerRadius(8)
+                }
+            }
+            Spacer()
+        }
+        .background(Color.black)
+        .onReceive(timerPublisher) { _ in
+            guard running else { return }
+            if remaining > 0 { remaining -= 1 } else { running = false }
+        }
+    }
+
+    private func startTimer() {
+        totalSeconds = inputMinutes * 60 + inputSeconds
+        remaining = totalSeconds
+        running = true
+    }
+
+    private func formatRemaining(_ s: Int) -> String {
+        String(format: "%02d:%02d", s / 60, s % 60)
+    }
+}
