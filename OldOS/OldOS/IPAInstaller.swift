@@ -191,6 +191,58 @@ struct ipa_installer_icon: View {
     }
 }
 
+// MARK: - AltStore icon and home screen button
+
+struct altstore_icon: View {
+    var size: CGFloat = 60
+    var body: some View {
+        ZStack {
+            LinearGradient(gradient: Gradient(stops: [
+                .init(color: Color(red: 0.10, green: 0.28, blue: 0.86), location: 0),
+                .init(color: Color(red: 0.06, green: 0.18, blue: 0.72), location: 0.5),
+                .init(color: Color(red: 0.04, green: 0.12, blue: 0.60), location: 0.5),
+                .init(color: Color(red: 0.05, green: 0.15, blue: 0.65), location: 1)
+            ]), startPoint: .top, endPoint: .bottom)
+            VStack(spacing: size * 0.03) {
+                Image(systemName: "arrow.down.to.line.circle.fill")
+                    .resizable().scaledToFit()
+                    .frame(width: size * 0.50)
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.35), radius: 1, x: 0, y: 1)
+                Text("ALT")
+                    .font(.system(size: size * 0.14, weight: .black, design: .rounded))
+                    .foregroundColor(.white.opacity(0.90))
+                    .shadow(color: .black.opacity(0.4), radius: 0, x: 0, y: -0.5)
+            }
+        }
+        .frame(width: size, height: size)
+        .cornerRadius(size * 0.225)
+        .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 2)
+    }
+}
+
+struct app_altstore: View {
+    var body: some View {
+        Button(action: {
+            if let url = URL(string: "altstore://") {
+                UIApplication.shared.open(url)
+            }
+        }) {
+            VStack(spacing: 0) {
+                altstore_icon(size: UIScreen.main.bounds.width / (390/60))
+                    .frame(width: UIScreen.main.bounds.width / (390/60),
+                           height: UIScreen.main.bounds.width / (390/60))
+                Text("AltStore")
+                    .foregroundColor(.white)
+                    .font(.custom("Helvetica Neue Medium", fixedSize: 11))
+                    .shadow(color: Color.black.opacity(0.9), radius: 0.75, x: 0, y: 1.75)
+                    .lineLimit(1)
+            }
+        }.background(Image("WallpaperIconShadow").resizable().scaledToFit()
+            .frame(width: UIScreen.main.bounds.width / (390/104)).offset(y: 6))
+    }
+}
+
 // Home screen app button (mirrors the `app` struct but draws its icon programmatically)
 struct app_ipa_installer: View {
     @Binding var current_view: String

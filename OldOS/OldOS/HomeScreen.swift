@@ -1238,6 +1238,7 @@ struct apps_second: View {
                 GridItem(.fixed(UIScreen.main.bounds.width/(390/85)), spacing: 1)
             ], alignment: .center, spacing: UIScreen.main.bounds.height/(844/40)*icon_scaler) {
                 app(image_name: "Contacts", app_name: "Contacts", current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, folder_offset: $folder_offset)
+                app_altstore()
             }
             Spacer().frame(height:UIScreen.main.bounds.height/(844/40)*icon_scaler)
             Spacer()
