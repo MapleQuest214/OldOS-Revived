@@ -84,7 +84,7 @@ var phone_tabs = ["Favorites", "Recents", "Contacts", "Keypad", "Voicemail"]
 struct PhoneTabView : View {
     
     @Binding var selectedTab:String
-    @State var edge = UIApplication.shared.windows.first?.safeAreaInsets
+    @State var edge = (UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.windows.first)?.safeAreaInsets
     @Binding var current_nav_view: String
     @Binding var forward_or_backward: Bool
     @Binding var contacts_current_nav_view: String

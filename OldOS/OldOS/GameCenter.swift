@@ -46,7 +46,7 @@ var gamecenter_tabs = ["Me", "Friends", "Games", "Requests"]
 struct GameCenterTabView : View {
     
     @Binding var selectedTab:String
-    @State var edge = UIApplication.shared.windows.first?.safeAreaInsets
+    @State var edge = (UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.windows.first)?.safeAreaInsets
     @Binding var current_nav_view: String
     @Binding var forward_or_backward: Bool
     @Binding var show_friend: Bool
@@ -539,7 +539,7 @@ struct game_center_requests_view: View {
 class game_center_observer: ObservableObject {
     @Published var friends = [GKPlayer]()
     @Published var achievements = [GKAchievement]()
-    @Published var local_player = GKLocalPlayer()
+    @Published var local_player = GKLocalPlayer.local
     @Published var recentPlayers = [GKPlayer]()
     @ObservedObject var gameKitHelper = GameKitHelper.sharedInstance
     init() {

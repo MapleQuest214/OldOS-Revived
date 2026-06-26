@@ -97,7 +97,7 @@ var tabs = ["Playlists", "Artists", "Songs", "Videos", "More"]
 struct iPodTabView : View {
     
     @Binding var selectedTab:String
-    @State var edge = UIApplication.shared.windows.first?.safeAreaInsets
+    @State var edge = (UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.windows.first)?.safeAreaInsets
     @Binding var current_nav_view: String
     @Binding var forward_or_backward: Bool
     @Binding var artists_current_view: String
@@ -174,7 +174,7 @@ extension View{
 
 //**MARK: Now Playing
 struct iPodNowPlaying: View {
-    @State var edge = UIApplication.shared.windows.first?.safeAreaInsets
+    @State var edge = (UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.windows.first)?.safeAreaInsets
     @Binding var current_nav_view: String
     @Binding var forward_or_backward: Bool
     @Binding var view_height: CGFloat
