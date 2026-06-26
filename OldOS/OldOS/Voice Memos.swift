@@ -814,7 +814,7 @@ final class AudioRecorderWithLiveVU: ObservableObject {
         let session = AVAudioSession.sharedInstance()
         do {
             try session.setCategory(.playAndRecord, mode: .default,
-                                    options: [.defaultToSpeaker, .allowBluetoothHFP, .mixWithOthers]) //Using videoRecording seems give us the best results
+                                    options: [.defaultToSpeaker, .allowBluetooth, .mixWithOthers]) //Using videoRecording seems give us the best results
             try session.setActive(true)
             try? session.setPreferredInputNumberOfChannels(session.maximumInputNumberOfChannels)
         } catch { lastError = "Session: \(error.localizedDescription)" }
