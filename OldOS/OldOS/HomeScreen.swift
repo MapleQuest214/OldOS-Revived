@@ -10,6 +10,7 @@ import CoreTelephony
 import PureSwiftUITools
 import Network
 import Combine
+import UniformTypeIdentifiers
 
 extension View where Self: Equatable {
     public func equatable() -> EquatableView<Self> {
@@ -44,7 +45,7 @@ struct multitasking_controller: View {
 
 //Here's how our view hierarchy works: we manage everything in a view I've deemed "Controller." It's super simple, we change the current view string, and the entire screen changes. Simple, elegant, and the way I like doing it.
 struct Controller: View {
-    
+    @Environment(\.scenePhase) var scenePhase
     @State var current_view: String = "HS"
     @State var multitasking_apps: [String] = []
     @State var apps_scale: CGFloat = 4
@@ -136,9 +137,6 @@ struct Controller: View {
                             case "Voice Memos":
                                 multitasking_controller(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, multitasking_apps: $multitasking_apps, instant_multitasking_change: $instant_multitasking_change, current_multitasking_app: $current_multitasking_app, should_update: $should_update, show_remove: $show_remove, show_multitasking: $show_multitasking, relative_app: "Voice Memos")
                                 VoiceMemos().padding([.leading, .trailing]).transition(.scale).modifiedForMultitasking2(show_multitasking, instant_multitasking_change, current_multitasking_app == "Voice Memos")
-                            case "IPA Installer":
-                                multitasking_controller(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, multitasking_apps: $multitasking_apps, instant_multitasking_change: $instant_multitasking_change, current_multitasking_app: $current_multitasking_app, should_update: $should_update, show_remove: $show_remove, show_multitasking: $show_multitasking, relative_app: "IPA Installer")
-                                IPAInstaller(instant_multitasking_change: $instant_multitasking_change).padding([.leading, .trailing]).transition(.scale).modifiedForMultitasking2(show_multitasking, instant_multitasking_change, current_multitasking_app == "IPA Installer")
                             default:
                                 LockScreen(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, apps_scale_height: $apps_scale_height).padding([.leading, .trailing])
                             }
@@ -169,7 +167,19 @@ struct Controller: View {
                 }
                 multitasking_apps.insert(current_view, at: 0)
             }
-        } .ifButtonShapesEnabledLive { view in
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .background {
+                current_view = "LS"
+                apps_scale = 4
+                dock_offset = 100
+                show_multitasking = false
+                instant_multitasking_change = false
+                should_update = false
+                show_remove = false
+            }
+        }
+        .ifButtonShapesEnabledLive { view in
             view.buttonStyle(buttonShapesOverride())
         }//.buttonStyle(buttonShapesOverride())
     }
@@ -237,6 +247,36 @@ func deg2rad(_ number: Double) -> Double {
     return number * .pi / 180
 }
 
+struct AppDropDelegate: DropDelegate {
+    let app: String
+    var apps: Binding<[String]>
+    var appsMain: Binding<[String]>
+    var dragging: Binding<String?>
+
+    func dropEntered(info: DropInfo) {
+        guard let source = dragging.wrappedValue, source != app else { return }
+        guard let from = apps.wrappedValue.firstIndex(of: source),
+              let to = apps.wrappedValue.firstIndex(of: app) else { return }
+        withAnimation(.default) {
+            apps.wrappedValue.move(fromOffsets: IndexSet(integer: from),
+                                   toOffset: to > from ? to + 1 : to)
+        }
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        dragging.wrappedValue = nil
+        var newMain = appsMain.wrappedValue
+        let sectionSet = Set(apps.wrappedValue)
+        guard let insertAt = newMain.firstIndex(where: { sectionSet.contains($0) }) else { return true }
+        newMain.removeAll { sectionSet.contains($0) }
+        newMain.insert(contentsOf: apps.wrappedValue, at: min(insertAt, newMain.count))
+        appsMain.wrappedValue = newMain
+        return true
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+}
+
 struct multitasking_app_section: View {
     @State var icon_scaler: CGFloat = 1.0
     @State var switcher: Bool = false
@@ -248,6 +288,8 @@ struct multitasking_app_section: View {
     @Binding var show_remove: Bool
     @Binding var apps_main_array: [String]
     @State var apps: [String]
+    @State var draggingApp: String? = nil
+    @State var swipeOffsets: [String: CGFloat] = [:]
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -258,9 +300,49 @@ struct multitasking_app_section: View {
                 GridItem(.fixed(UIScreen.main.bounds.width/(390/85)), spacing: 1)
             ], alignment: .center, spacing: UIScreen.main.bounds.height/(844/40)*icon_scaler) {
                 ForEach(Array(apps.enumerated()), id:\.element) { (i, r_app) in
-                    multitasking_app(image_name: r_app == "Weather" ? "Weather Fahrenheit" : r_app, app_name: r_app, current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, show_remove: $show_remove, should_update: $should_update, apps: $apps, apps_main_array: $apps_main_array).rotationEffect(.degrees(sin(deg2rad(dual_angle))*Double.random(in: 1...3)*1.25)).offset(x: -CGFloat(sin(deg2rad(dual_angle))*Double.random(in: -2...2)*0.75), y: 0).transition(.asymmetric(insertion: .slide, removal: .scale))
+                    let swipeOff = swipeOffsets[r_app, default: 0]
+                    multitasking_app(image_name: r_app == "Weather" ? "Weather Fahrenheit" : r_app, app_name: r_app, current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, show_remove: $show_remove, should_update: $should_update, apps: $apps, apps_main_array: $apps_main_array)
+                        .rotationEffect(.degrees(sin(deg2rad(dual_angle))*Double.random(in: 1...3)*1.25))
+                        .offset(x: -CGFloat(sin(deg2rad(dual_angle))*Double.random(in: -2...2)*0.75), y: swipeOff)
+                        .opacity(swipeOff < -30 ? max(0.0, 1.0 + (swipeOff + 30.0) / 60.0) : (draggingApp == r_app ? 0.5 : 1.0))
+                        .transition(.asymmetric(insertion: .slide, removal: .scale))
+                        .onDrag {
+                            guard !should_update else { return NSItemProvider() }
+                            draggingApp = r_app
+                            return NSItemProvider(object: r_app as NSString)
+                        }
+                        .onDrop(of: [UTType.text], delegate: AppDropDelegate(
+                            app: r_app, apps: $apps, appsMain: $apps_main_array, dragging: $draggingApp
+                        ))
+                        .gesture(
+                            DragGesture(minimumDistance: 10)
+                                .onChanged { value in
+                                    guard draggingApp == nil,
+                                          !should_update,
+                                          value.translation.height < 0,
+                                          abs(value.translation.height) > abs(value.translation.width) else { return }
+                                    swipeOffsets[r_app] = value.translation.height
+                                }
+                                .onEnded { value in
+                                    if draggingApp == nil && !should_update &&
+                                       value.translation.height < -60 &&
+                                       abs(value.translation.height) > abs(value.translation.width) {
+                                        withAnimation(.easeOut(duration: 0.25)) { swipeOffsets[r_app] = -300 }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                            withAnimation {
+                                                if let idx = apps.firstIndex(of: r_app) { apps.remove(at: idx) }
+                                            }
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.36) {
+                                                if let idx = apps_main_array.firstIndex(of: r_app) { apps_main_array.remove(at: idx) }
+                                            }
+                                        }
+                                    } else if draggingApp == nil {
+                                        withAnimation(.spring()) { swipeOffsets[r_app] = 0 }
+                                    }
+                                }
+                        )
                 }
-                    
+
             }
         }.onAppear() {
             //MARK — iPhone 8
@@ -1150,7 +1232,6 @@ struct apps_second: View {
                 GridItem(.fixed(UIScreen.main.bounds.width/(390/85)), spacing: 1)
             ], alignment: .center, spacing: UIScreen.main.bounds.height/(844/40)*icon_scaler) {
                 app(image_name: "Contacts", app_name: "Contacts", current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, folder_offset: $folder_offset)
-                app_ipa_installer(current_view: $current_view, apps_scale: $apps_scale, dock_offset: $dock_offset, folder_offset: $folder_offset)
             }
             Spacer().frame(height:UIScreen.main.bounds.height/(844/40)*icon_scaler)
             Spacer()

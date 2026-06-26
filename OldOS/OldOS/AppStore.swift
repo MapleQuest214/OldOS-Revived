@@ -38,7 +38,7 @@ struct AppStore: View {
                 VStack(spacing:0) {
                     status_bar_in_app().frame(minHeight: 24, maxHeight:24).zIndex(1)
                     app_store_title_bar(title: (selectedTab != "Featured" || featured_show_application == false) ? (selectedTab != "Top 25" || top25_show_application == false) ? (selectedTab != "Search" || search_show_application == false) ? (selectedTab == "Categories" && categories_current_view == "Main") ? selectedTab : (selectedTab == "Categories" && categories_current_view == "Category") ? selected_category.name : selectedTab == "Updates" ? selectedTab : "Info" : "Info" : "Info" : "Info", selected_segment: $selected_segment, selected_segment_25: $selected_segment_25, forward_or_backward: $forward_or_backward, selectedTab: $selectedTab, featured_show_application: $featured_show_application, top25_show_application: $top25_show_application, categories_current_view: $categories_current_view, search_results: $search_results, search_show_application: $search_show_application, search_selected_application: $search_selected_application, editing_state: $editing_state, show_edit: false, show_plus: false, instant_multitasking_change: $instant_multitasking_change).frame(minWidth: geometry.size.width, maxWidth: geometry.size.width, minHeight: 60, maxHeight:60).zIndex(1)
-                    AppStoreTabView(selectedTab: $selectedTab, current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward, selected_segment: $selected_segment, selected_segment_25: $selected_segment_25, featured_observer: featured_observer, top_paid_and_free_observer: top_paid_and_free_observer, featured_show_application: $featured_show_application, featured_selected_application: $featured_selected_application, top25_show_application: $top25_show_application, top25_selected_application: $top25_selected_application, categories_current_view: $categories_current_view, categories_selected_application: $categories_selected_application, selected_category: $selected_category, search_results: $search_results, search_show_application: $search_show_application, search_selected_application: $search_selected_application, editing_state: $editing_state).clipped()
+                    AppStoreTabView(selectedTab: $selectedTab, current_nav_view: $current_nav_view, forward_or_backward: $forward_or_backward, selected_segment: $selected_segment, selected_segment_25: $selected_segment_25, featured_observer: featured_observer, top_paid_and_free_observer: top_paid_and_free_observer, featured_show_application: $featured_show_application, featured_selected_application: $featured_selected_application, top25_show_application: $top25_show_application, top25_selected_application: $top25_selected_application, categories_current_view: $categories_current_view, categories_selected_application: $categories_selected_application, selected_category: $selected_category, search_results: $search_results, search_show_application: $search_show_application, search_selected_application: $search_selected_application, editing_state: $editing_state, instant_multitasking_change: $instant_multitasking_change).clipped()
                 }
             }.compositingGroup().clipped()
         }.onAppear() {
@@ -55,9 +55,9 @@ struct AppStore: View {
 //    }
 //}
 
-var appstore_tabs = ["Featured", "Categories", "Top 25", "Search", "Updates"]
+var appstore_tabs = ["Featured", "Categories", "Top 25", "Search", "Updates", "Installer"]
 struct AppStoreTabView : View {
-    
+
     @Binding var selectedTab:String
     @Binding var current_nav_view: String
     @Binding var forward_or_backward: Bool
@@ -76,6 +76,7 @@ struct AppStoreTabView : View {
     @Binding var search_show_application: Bool
     @Binding var search_selected_application: Application_Data.Results?
     @Binding var editing_state: String
+    @Binding var instant_multitasking_change: Bool
     var body: some View{
         GeometryReader {geometry in
             VStack(spacing:0) {
@@ -120,6 +121,10 @@ struct AppStoreTabView : View {
                     case "Updates":
                         updatable_applications().frame(height: geometry.size.height - 57)
                             .tag("Updates")
+                    case "Installer":
+                        appstore_installer_view(instant_multitasking_change: $instant_multitasking_change)
+                            .frame(height: geometry.size.height - 57)
+                            .tag("Installer")
                     default:
                         blank_appstore_view().frame(height: geometry.size.height - 57)
                             .tag("Featured")
@@ -129,9 +134,9 @@ struct AppStoreTabView : View {
                 ZStack {
                     Rectangle().fill(LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 0, green: 0, blue: 0), location: 0), .init(color: Color(red: 84/255, green: 84/255, blue: 84/255), location: 0.02), .init(color: Color(red: 59/255, green: 59/255, blue: 59/255), location: 0.04), .init(color: Color(red: 29/255, green: 29/255, blue: 29/255), location: 0.5), .init(color: Color(red: 7.5/255, green: 7.5/255, blue: 7.5/255), location: 0.51), .init(color: Color(red: 7.5/255, green: 7.5/255, blue: 7.5/255), location: 1)]), startPoint: .top, endPoint: .bottom)).frame(height:57)
                     HStack(spacing: 0){
-                        
+
                         ForEach(appstore_tabs,id: \.self){image in
-                            TabButton_AppStore(image: image, selectedTab: $selectedTab, geometry: geometry)
+                            TabButton_AppStore(image: image, selectedTab: $selectedTab, geometry: geometry, tabCount: appstore_tabs.count)
                             
                             // equal spacing...
                             
@@ -1527,73 +1532,62 @@ struct app_store_title_bar : View {
 
 
 struct TabButton_AppStore : View {
-    
+
     var image : String
     @Binding var selectedTab : String
     var geometry: GeometryProxy
+    var tabCount: Int = 6
+    private var tabW: CGFloat { geometry.size.width / CGFloat(tabCount) - 5 }
+    private var iconW: CGFloat { image == "Search" ? 25 : image == "Featured" ? 37.5 : 28 }
     var body: some View{
         Button(action: {
             selectedTab = image
         }) {
             ZStack {
                 if selectedTab == image {
-                    RoundedRectangle(cornerRadius: 3).fill(Color.white.opacity(0.1)).frame(width: geometry.size.width/5 - 5, height: 51).blendMode(.screen)
+                    RoundedRectangle(cornerRadius: 3).fill(Color.white.opacity(0.1)).frame(width: tabW, height: 51).blendMode(.screen)
                     VStack(spacing: 2) {
-                        if image == "Featured" {
-                            Image("UITabBarFeaturedSelected2").resizable().aspectRatio(contentMode: .fit).frame(width: image == "Search" ? 25 : image == "Featured" ? 37.5 : 30.5, height: 30.5)
+                        if image == "Installer" {
+                            ipa_installer_icon(size: 28)
+                                .overlay(LinearGradient(gradient: Gradient(colors: [Color(red: 205/255, green: 233/255, blue: 249/255), Color(red: 75/255, green: 220/255, blue: 251/255)]), startPoint: .top, endPoint: .bottom))
+                                .mask(ipa_installer_icon(size: 28))
+                        } else if image == "Featured" {
+                            Image("UITabBarFeaturedSelected2").resizable().aspectRatio(contentMode: .fit).frame(width: iconW, height: 30.5)
                         } else {
                             ZStack {
-                                Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: image == "Search" ? 25 : image == "Featured" ? 37.5 : 30.5, height: 30.5).overlay(
+                                Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: iconW, height: 30.5).overlay(
                                     LinearGradient(gradient: Gradient(colors: [Color(red: 205/255, green: 233/255, blue: 249/255), Color(red: 75/255, green: 220/255, blue: 251/255)]), startPoint: .top, endPoint: .bottom)
-                                ).mask(Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: image == "Search" ? 25 : image == "Featured" ? 37.5 : 30.5, height: 30.5)).offset(y:-0.5)
+                                ).mask(Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: iconW, height: 30.5)).offset(y:-0.5)
                                 
-                                Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: image == "Search" ? 25 : image == "Featured" ? 37.5 : 30, height: 30).overlay(
+                                Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: iconW, height: 28).overlay(
                                     ZStack {
-                                        LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 197/255, green: 210/255, blue: 229/255), location: 0), .init(color: Color(red: 99/255, green: 162/255, blue: 216/255), location: 0.47), .init(color: Color(red: 0/255, green: 145/255, blue: 230/255), location: 0.49), .init(color: Color(red: 21/255, green: 197/255, blue: 252/255), location: 1)]), startPoint: .top, endPoint: .bottom).rotationEffect(Angle(degrees: image == "More" ? 0 : -15)).frame(width: image == "More" ? 40 : 40, height: image == "Search" ? 38 : image == "Contacts" ? 34 : 30).brightness(0.095).offset(y: image == "Artists" ? 2 : 0)
-                                        if image == "Featured" {
-                                            VStack(spacing:0) {
-                                                HStack(spacing:0) {
-                                                    ZStack {
-                                                        Ellipse().fill(LinearGradient(gradient: Gradient(stops:[.init(color: Color(red: 0/255, green: 145/255, blue: 230/255), location: 0), .init(color: Color(red: 21/255, green: 197/255, blue: 252/255), location: 1)]), startPoint: .top, endPoint: .bottom)).frame(width: 16, height: 12).offset(y:-1)
-                                                    }
-                                                    Spacer().frame(width: 7)
-                                                    ZStack {
-                                                        Ellipse().fill(Color(red: 185/255, green: 249/255, blue: 254/255)).frame(width: 16, height: 12).offset(y:-1)
-                                                        Ellipse().fill(LinearGradient(gradient: Gradient(stops:[.init(color: Color(red: 0/255, green: 145/255, blue: 230/255), location: 0), .init(color: Color(red: 21/255, green: 197/255, blue: 252/255), location: 1)]), startPoint: .top, endPoint: .bottom)).frame(width: 16, height: 6).brightness(0.095).offset(y:1.5)
-                                                    }
-                                                }
-                                                Spacer()
-                                            }
-                                        }
+                                        LinearGradient(gradient: Gradient(stops: [.init(color: Color(red: 197/255, green: 210/255, blue: 229/255), location: 0), .init(color: Color(red: 99/255, green: 162/255, blue: 216/255), location: 0.47), .init(color: Color(red: 0/255, green: 145/255, blue: 230/255), location: 0.49), .init(color: Color(red: 21/255, green: 197/255, blue: 252/255), location: 1)]), startPoint: .top, endPoint: .bottom).rotationEffect(Angle(degrees: image == "More" ? 0 : -15)).frame(width: 40, height: image == "Search" ? 38 : 30).brightness(0.095)
                                     }
-                                ).mask(Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: image == "Search" ? 25 : image == "Featured" ? 37.5 : 30, height: 30)).shadow(color: Color.black.opacity(0.6), radius:2.5, x: 0, y:2.5)
+                                ).mask(Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: iconW, height: 28)).shadow(color: Color.black.opacity(0.6), radius:2.5, x: 0, y:2.5)
                             }
                         }
                         HStack {
-                            if image != "Categories" {
-                                Spacer()
-                            }
-                            Text(image).foregroundColor(.white).font(.custom("Helvetica Neue Bold", fixedSize: 11))
-                            if image != "Categories" {
-                                Spacer()
-                            }
-                        }.frame(maxWidth: geometry.size.width/5 - 5)
+                            if image != "Categories" { Spacer() }
+                            Text(image == "Installer" ? "Installer" : image).foregroundColor(.white).font(.custom("Helvetica Neue Bold", fixedSize: 10))
+                            if image != "Categories" { Spacer() }
+                        }.frame(maxWidth: tabW)
                     }
                 } else {
                     VStack(spacing: 2) {
-                        Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: image == "Search" ? 25 : image == "Featured" ? 37.5 : 30, height: 30).overlay(
-                            LinearGradient(gradient: Gradient(colors: [Color(red: 157/255, green: 157/255, blue: 157/255), Color(red: 89/255, green: 89/255, blue: 89/255)]), startPoint: .top, endPoint: .bottom)
-                        ).mask(Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: image == "Search" ? 25 : image == "Featured" ? 37.5 : 30, height: 30)).shadow(color: Color.black.opacity(0.75), radius: 0, x: 0, y: -1)
-                        // Image(uiImage: UIImage(named:"\(image)_iPod")?.stroked() ?? UIImage())
+                        if image == "Installer" {
+                            ipa_installer_icon(size: 28)
+                                .overlay(LinearGradient(gradient: Gradient(colors: [Color(red: 157/255, green: 157/255, blue: 157/255), Color(red: 89/255, green: 89/255, blue: 89/255)]), startPoint: .top, endPoint: .bottom))
+                                .mask(ipa_installer_icon(size: 28))
+                        } else {
+                            Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: iconW, height: 28).overlay(
+                                LinearGradient(gradient: Gradient(colors: [Color(red: 157/255, green: 157/255, blue: 157/255), Color(red: 89/255, green: 89/255, blue: 89/255)]), startPoint: .top, endPoint: .bottom)
+                            ).mask(Image("\(image)_Store").renderingMode(.template).resizable().aspectRatio(contentMode: .fit).frame(width: iconW, height: 28)).shadow(color: Color.black.opacity(0.75), radius: 0, x: 0, y: -1)
+                        }
                         HStack {
-                            if image != "Categories" {
-                                Spacer()
-                            }
-                            Text(image).foregroundColor(Color(red: 168/255, green: 168/255, blue: 168/255)).font(.custom("Helvetica Neue Bold", fixedSize: 11))
-                            if image != "Categories" {
-                                Spacer()
-                            }
-                        }.frame(maxWidth: geometry.size.width/5 - 5)
+                            if image != "Categories" { Spacer() }
+                            Text(image == "Installer" ? "Installer" : image).foregroundColor(Color(red: 168/255, green: 168/255, blue: 168/255)).font(.custom("Helvetica Neue Bold", fixedSize: 10))
+                            if image != "Categories" { Spacer() }
+                        }.frame(maxWidth: tabW)
                     }
                 }
             }
@@ -1604,5 +1598,157 @@ struct TabButton_AppStore : View {
 struct blank_appstore_view: View {
     var body: some View {
         Text("")
+    }
+}
+
+// MARK: - App Store Installer Tab
+
+struct ipa_repo_entry: Identifiable {
+    let id = UUID()
+    let name: String
+    let description: String
+    let urlString: String
+}
+
+let ipa_repos: [ipa_repo_entry] = [
+    ipa_repo_entry(name: "Internet Archive – iOS Apps",
+                   description: "Massive archive of old iOS app IPAs preserved for history.",
+                   urlString: "https://archive.org/search?query=ipa+ios&and[]=mediatype%3A%22software%22"),
+    ipa_repo_entry(name: "AppDB",
+                   description: "Repository of apps including older versions compatible with older iOS.",
+                   urlString: "https://appdb.to"),
+    ipa_repo_entry(name: "OldOS Compatible Tweaks",
+                   description: "GitHub list of open-source IPAs that work on modern iOS.",
+                   urlString: "https://github.com/search?q=ipa+old+ios&type=repositories"),
+    ipa_repo_entry(name: "AltStore Sources",
+                   description: "Community AltStore sources with legacy and indie app IPAs.",
+                   urlString: "https://altsource.by.lao.sb/browse/"),
+    ipa_repo_entry(name: "Feather Sources",
+                   description: "Sources compatible with the Feather sideloading tool.",
+                   urlString: "https://github.com/search?q=feather+ipa+source&type=repositories"),
+]
+
+struct appstore_installer_view: View {
+    @Binding var instant_multitasking_change: Bool
+    @State var showIPAInstaller = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView(showsIndicators: true) {
+                VStack(spacing: 0) {
+                    // IPA Installer section header
+                    ZStack {
+                        LinearGradient(gradient: Gradient(stops: [
+                            .init(color: Color(red: 227/255, green: 231/255, blue: 236/255), location: 0),
+                            .init(color: Color(red: 210/255, green: 216/255, blue: 226/255), location: 1)
+                        ]), startPoint: .top, endPoint: .bottom)
+                        HStack {
+                            Text("IPA Installer")
+                                .font(.custom("Helvetica Neue Bold", fixedSize: 17))
+                                .foregroundColor(Color(red: 48/255, green: 57/255, blue: 70/255))
+                                .shadow(color: Color.white.opacity(0.7), radius: 0, x: 0.0, y: 0.9)
+                                .padding(.leading, 14)
+                            Spacer()
+                        }
+                    }
+                    .frame(height: 28)
+                    Rectangle().fill(Color(red: 171/255, green: 171/255, blue: 171/255)).frame(height: 0.5)
+
+                    // Open Installer button
+                    Button(action: { showIPAInstaller = true }) {
+                        HStack(spacing: 14) {
+                            ipa_installer_icon(size: 44)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("IPA Installer")
+                                    .font(.custom("Helvetica Neue Bold", fixedSize: 16))
+                                    .foregroundColor(.black)
+                                Text("Select & install IPA files via Feather, AltStore, or TrollStore")
+                                    .font(.custom("Helvetica Neue Regular", fixedSize: 12))
+                                    .foregroundColor(Color(red: 100/255, green: 100/255, blue: 100/255))
+                                    .lineLimit(2)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(Color(red: 180/255, green: 180/255, blue: 185/255))
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color.white)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    Rectangle().fill(Color(red: 171/255, green: 171/255, blue: 171/255)).frame(height: 0.5)
+
+                    Spacer().frame(height: 20)
+
+                    // Repositories section header
+                    ZStack {
+                        LinearGradient(gradient: Gradient(stops: [
+                            .init(color: Color(red: 227/255, green: 231/255, blue: 236/255), location: 0),
+                            .init(color: Color(red: 210/255, green: 216/255, blue: 226/255), location: 1)
+                        ]), startPoint: .top, endPoint: .bottom)
+                        HStack {
+                            Text("IPA Repositories")
+                                .font(.custom("Helvetica Neue Bold", fixedSize: 17))
+                                .foregroundColor(Color(red: 48/255, green: 57/255, blue: 70/255))
+                                .shadow(color: Color.white.opacity(0.7), radius: 0, x: 0.0, y: 0.9)
+                                .padding(.leading, 14)
+                            Spacer()
+                        }
+                    }
+                    .frame(height: 28)
+                    Rectangle().fill(Color(red: 171/255, green: 171/255, blue: 171/255)).frame(height: 0.5)
+
+                    ForEach(ipa_repos) { repo in
+                        Button(action: {
+                            if let url = URL(string: repo.urlString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            VStack(spacing: 0) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "archivebox.fill")
+                                        .font(.system(size: 26))
+                                        .foregroundColor(Color(red: 0.18, green: 0.62, blue: 1.0))
+                                        .frame(width: 44, height: 44)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(repo.name)
+                                            .font(.custom("Helvetica Neue Bold", fixedSize: 15))
+                                            .foregroundColor(.black)
+                                            .lineLimit(1)
+                                        Text(repo.description)
+                                            .font(.custom("Helvetica Neue Regular", fixedSize: 12))
+                                            .foregroundColor(Color(red: 100/255, green: 100/255, blue: 100/255))
+                                            .lineLimit(2)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(Color(red: 180/255, green: 180/255, blue: 185/255))
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .background(Color.white)
+                                Rectangle().fill(Color(red: 200/255, green: 200/255, blue: 205/255)).frame(height: 0.5).padding(.leading, 70)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    Rectangle().fill(Color(red: 171/255, green: 171/255, blue: 171/255)).frame(height: 0.5)
+
+                    Spacer().frame(height: 20)
+                    Text("Tap a repository to browse in Safari.\nDownload an IPA, then use the Installer tab to open and sideload it.")
+                        .font(.custom("Helvetica Neue Regular", fixedSize: 12))
+                        .foregroundColor(Color(red: 130/255, green: 130/255, blue: 135/255))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                    Spacer().frame(height: 40)
+                }
+            }
+            .background(Color(red: 227/255, green: 231/255, blue: 236/255))
+        }
+        .sheet(isPresented: $showIPAInstaller) {
+            IPAInstaller(instant_multitasking_change: $instant_multitasking_change)
+        }
     }
 }

@@ -63,11 +63,23 @@ struct Messages: View {
 struct messages_conversation_list: View {
     @Binding var current_nav_view: String
     @Binding var forward_or_backward: Bool
+    @State var contacts: [CNContact] = []
+    @State var contactsLoaded = false
+    @State var contactsAccessDenied = false
+    @State var searchText = ""
+
+    var filteredContacts: [CNContact] {
+        if searchText.isEmpty { return contacts }
+        return contacts.filter {
+            let name = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
+            return name.localizedCaseInsensitiveContains(searchText)
+        }
+    }
 
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                // Search bar (iOS 4 style)
+                // Search bar
                 ZStack {
                     Color(red: 199/255, green: 203/255, blue: 212/255)
                     HStack {
@@ -75,11 +87,12 @@ struct messages_conversation_list: View {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(Color(red: 128/255, green: 128/255, blue: 128/255))
                                 .font(.system(size: 14))
-                            Text("Search")
+                            TextField("Search", text: $searchText)
                                 .font(.custom("Helvetica Neue Regular", fixedSize: 15))
-                                .foregroundColor(Color(red: 128/255, green: 128/255, blue: 128/255))
+                                .foregroundColor(.black)
                         }
                         .frame(maxWidth: .infinity, minHeight: 28)
+                        .padding(.horizontal, 8)
                         .background(Color.white.opacity(0.9))
                         .cornerRadius(9)
                         .padding([.leading, .trailing], 8)
@@ -88,25 +101,140 @@ struct messages_conversation_list: View {
                 }
                 .frame(height: 44)
 
-                // Empty state — iOS 4 didn't expose SMS database via public API
-                // Show a prompt to start a new conversation
-                VStack {
-                    Spacer()
-                    Image(systemName: "bubble.left.and.bubble.right")
-                        .font(.system(size: 54))
-                        .foregroundColor(Color(red: 210/255, green: 210/255, blue: 215/255))
-                        .padding(.bottom, 12)
-                    Text("No Messages")
-                        .font(.custom("Helvetica Neue Bold", fixedSize: 20))
-                        .foregroundColor(Color(red: 128/255, green: 128/255, blue: 128/255))
-                    Text("Tap the compose button to\nstart a new conversation.")
-                        .font(.custom("Helvetica Neue Regular", fixedSize: 14))
-                        .foregroundColor(Color(red: 160/255, green: 160/255, blue: 165/255))
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 4)
-                    Spacer()
+                // Open in system Messages
+                Button(action: { UIApplication.shared.open(URL(string: "sms:")!) }) {
+                    HStack {
+                        Image(systemName: "message.fill")
+                            .foregroundColor(Color(red: 128/255, green: 149/255, blue: 175/255))
+                            .font(.system(size: 16))
+                            .frame(width: 32)
+                        Text("View All Conversations in Messages")
+                            .font(.custom("Helvetica Neue Regular", fixedSize: 15))
+                            .foregroundColor(Color(red: 48/255, green: 57/255, blue: 70/255))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(Color(red: 180/255, green: 180/255, blue: 185/255))
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(height: 44)
+                    .background(Color.white)
                 }
-                .frame(width: geometry.size.width)
+                .buttonStyle(PlainButtonStyle())
+                Rectangle().fill(Color(red: 171/255, green: 171/255, blue: 171/255)).frame(height: 0.5)
+
+                if contactsAccessDenied {
+                    VStack {
+                        Spacer()
+                        Image(systemName: "person.crop.circle.badge.xmark")
+                            .font(.system(size: 44))
+                            .foregroundColor(Color(red: 210/255, green: 210/255, blue: 215/255))
+                            .padding(.bottom, 8)
+                        Text("Contacts Access Denied")
+                            .font(.custom("Helvetica Neue Bold", fixedSize: 17))
+                            .foregroundColor(Color(red: 128/255, green: 128/255, blue: 128/255))
+                        Text("Enable Contacts in Settings to\nmessage people from your address book.")
+                            .font(.custom("Helvetica Neue Regular", fixedSize: 13))
+                            .foregroundColor(Color(red: 160/255, green: 160/255, blue: 165/255))
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 4)
+                        Spacer()
+                    }
+                } else if !contactsLoaded {
+                    VStack { Spacer(); ProgressView(); Spacer() }
+                } else if filteredContacts.isEmpty {
+                    VStack {
+                        Spacer()
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 44))
+                            .foregroundColor(Color(red: 210/255, green: 210/255, blue: 215/255))
+                            .padding(.bottom, 8)
+                        Text(searchText.isEmpty ? "No Contacts" : "No Results")
+                            .font(.custom("Helvetica Neue Bold", fixedSize: 17))
+                            .foregroundColor(Color(red: 128/255, green: 128/255, blue: 128/255))
+                        Spacer()
+                    }
+                } else {
+                    ScrollView(showsIndicators: true) {
+                        LazyVStack(spacing: 0) {
+                            ForEach(filteredContacts, id: \.identifier) { contact in
+                                let phone = contact.phoneNumbers.first?.value.stringValue ?? ""
+                                let name = CNContactFormatter.string(from: contact, style: .fullName) ?? phone
+                                Button(action: {
+                                    let digits = phone.filter { "0123456789+".contains($0) }
+                                    if let url = URL(string: "sms:\(digits)") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }) {
+                                    VStack(spacing: 0) {
+                                        HStack(spacing: 12) {
+                                            ZStack {
+                                                Circle()
+                                                    .fill(LinearGradient(gradient: Gradient(colors: [Color(red: 180/255, green: 191/255, blue: 205/255), Color(red: 128/255, green: 149/255, blue: 175/255)]), startPoint: .top, endPoint: .bottom))
+                                                    .frame(width: 40, height: 40)
+                                                Text(String(name.prefix(1)).uppercased())
+                                                    .font(.custom("Helvetica Neue Bold", fixedSize: 18))
+                                                    .foregroundColor(.white)
+                                            }
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(name)
+                                                    .font(.custom("Helvetica Neue Bold", fixedSize: 16))
+                                                    .foregroundColor(.black)
+                                                    .lineLimit(1)
+                                                Text(phone)
+                                                    .font(.custom("Helvetica Neue Regular", fixedSize: 13))
+                                                    .foregroundColor(Color(red: 128/255, green: 128/255, blue: 128/255))
+                                                    .lineLimit(1)
+                                            }
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .foregroundColor(Color(red: 180/255, green: 180/255, blue: 185/255))
+                                                .font(.system(size: 13, weight: .semibold))
+                                        }
+                                        .padding(.horizontal, 14)
+                                        .frame(height: 56)
+                                        .background(Color.white)
+                                        Rectangle().fill(Color(red: 200/255, green: 200/255, blue: 205/255))
+                                            .frame(height: 0.5)
+                                            .padding(.leading, 66)
+                                    }
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear { loadContacts() }
+    }
+
+    private func loadContacts() {
+        let store = CNContactStore()
+        store.requestAccess(for: .contacts) { granted, _ in
+            guard granted else {
+                DispatchQueue.main.async { contactsAccessDenied = true; contactsLoaded = true }
+                return
+            }
+            let keys: [CNKeyDescriptor] = [
+                CNContactGivenNameKey as CNKeyDescriptor,
+                CNContactFamilyNameKey as CNKeyDescriptor,
+                CNContactPhoneNumbersKey as CNKeyDescriptor
+            ]
+            let request = CNContactFetchRequest(keysToFetch: keys)
+            do {
+                var results: [CNContact] = []
+                try store.enumerateContacts(with: request) { contact, _ in
+                    if !contact.phoneNumbers.isEmpty { results.append(contact) }
+                }
+                let sorted = results.sorted {
+                    let a = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
+                    let b = CNContactFormatter.string(from: $1, style: .fullName) ?? ""
+                    return a < b
+                }
+                DispatchQueue.main.async { contacts = sorted; contactsLoaded = true }
+            } catch {
+                DispatchQueue.main.async { contactsLoaded = true }
             }
         }
     }
