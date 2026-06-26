@@ -766,12 +766,10 @@ open class GameKitHelper: NSObject,  ObservableObject,  GKGameCenterControllerDe
             print("Local player is not authenticated")
             return nil }
         
-        let gameCenterViewController = GKGameCenterViewController()
-        
+        let gameCenterViewController = GKGameCenterViewController(state: .achievements)
+
         gameCenterViewController.gameCenterDelegate = self
-        
-        gameCenterViewController.viewState = .achievements
-        
+
         return gameCenterViewController
     }}
     
